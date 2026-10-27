@@ -1,0 +1,7 @@
+{
+  "name": "EventCraft - Logistics Coordinator & Creative Director",
+  "description": "Parse natural language event briefs into structured logistics data, creative direction moodboards, and balanced percentage-based budgets with guaranteed 10% contingency buffer and fallback handling.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
