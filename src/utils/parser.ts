@@ -386,27 +386,7 @@ export function parseEventRequestDeterministic(rawInput: string): StructuredEven
   const logistics: LogisticsPlan = generateLogisticsPlan(eventType, days, durationSummary, expectedGuests, capacityMetrics);
 
   // 12. Vendor RFP Matrix
-  const vendorRfpMatrix: VendorRfpItem[] = categories.map(cat => ({
-    id: `rfp-${cat.id}`,
-    category: cat.name,
-    percentageAllocation: cat.percentage,
-    allocatedBudgetDisplay: cat.allocatedAmount ? `$${cat.allocatedAmount.toLocaleString()}` : `${cat.percentage}% of overall budget`,
-    scopeOfWork: cat.scopeNotes,
-    selectionCriteria: [
-      `Demonstrated capacity to handle ${expectedGuests} attendees (${capacityMetrics.tierLabel})`,
-      'Proof of commercial liability insurance ($2M aggregate)',
-      'Guaranteed on-site lead supervisor for full run of show',
-      'Detailed itemized line-item proposal breakdown'
-    ],
-    keyVendorQuestions: [
-      `What is your overtime hourly billing rate beyond the agreed timeline?`,
-      `How do you handle day-of equipment redundancies or staff backups for ${expectedGuests} guests?`,
-      `What are your electrical power, loading dock, and service staging clearances?`
-    ],
-    timelineRequirement: cat.isContingency
-      ? `Maintained as liquid reserve to absorb up to ~${capacityMetrics.contingencyAbsorbedGuests} last-minute guest additions or day-of weather shifts`
-      : 'RFP issuance: T-90 days; Final contract execution: T-45 days'
-  }));
+  const vendorRfpMatrix: VendorRfpItem[] = generateVendorRfpMatrix(categories, expectedGuests, capacityMetrics);
 
   // Title synthesis
   let title = "Curated Event Production Brief";
@@ -640,7 +620,35 @@ export function generateGuestScaledCategories(
   return categories;
 }
 
-function generateCreativeDirection(
+export function generateVendorRfpMatrix(
+  categories: BudgetCategory[],
+  expectedGuests: number,
+  capacityMetrics: GuestCapacityMetrics
+): VendorRfpItem[] {
+  return categories.map(cat => ({
+    id: `rfp-${cat.id}`,
+    category: cat.name,
+    percentageAllocation: cat.percentage,
+    allocatedBudgetDisplay: cat.allocatedAmount ? `$${cat.allocatedAmount.toLocaleString()}` : `${cat.percentage}% of overall budget`,
+    scopeOfWork: cat.scopeNotes,
+    selectionCriteria: [
+      `Demonstrated capacity to handle ${expectedGuests} attendees (${capacityMetrics.tierLabel})`,
+      'Proof of commercial liability insurance ($2M aggregate)',
+      'Guaranteed on-site lead supervisor for full run of show',
+      'Detailed itemized line-item proposal breakdown'
+    ],
+    keyVendorQuestions: [
+      `What is your overtime hourly billing rate beyond the agreed timeline?`,
+      `How do you handle day-of equipment redundancies or staff backups for ${expectedGuests} guests?`,
+      `What are your electrical power, loading dock, and service staging clearances?`
+    ],
+    timelineRequirement: cat.isContingency
+      ? `Maintained as liquid reserve to absorb up to ~${capacityMetrics.contingencyAbsorbedGuests} last-minute guest additions or day-of weather shifts`
+      : 'RFP issuance: T-90 days; Final contract execution: T-45 days'
+  }));
+}
+
+export function generateCreativeDirection(
   eventType: EventType,
   briefText: string,
   guestCount: number,
@@ -695,6 +703,126 @@ function generateCreativeDirection(
           capacityPercentage: 100,
           description: `Dining space accommodating ${guestCount} seated attendees with ~${capacity.sqFtPerGuest} sq. ft. per guest.`,
           keyElements: [isIntimate ? "Continuous 30-foot family table" : "Round 60-inch guest tables", "Hanging greenery installations", "Oak dance floor"]
+        }
+      ]
+    };
+  }
+
+  if (eventType === 'gala') {
+    return {
+      conceptTitle: isIntimate ? "Gilded Salon & Private Cellar Benefactors" : "Nocturne Solstice & Grand Living Flora",
+      tagline: `Black-tie patron grandeur and generous philanthropy scaled for ${guestCount} benefactors.`,
+      narrative: `Conceived for ${guestCount} patrons. Towering botanical scapes, hand-cast brass accents, and an elevated acoustic profile for live chamber strings and an auctioneer rostrum.`,
+      colorPalette: [
+        { name: "Midnight Onyx", hex: "#09090B", role: "Cosmic Canvas Base" },
+        { name: "Vintage Brass", hex: "#CA8A04", role: "Gilded Highlights" },
+        { name: "Forest Cypress", hex: "#14532D", role: "Deep Botanical Density" },
+        { name: "Parchment Cream", hex: "#FEFCE8", role: "Warm Seated Illumination" },
+        { name: "Bordeaux Ruby", hex: "#831843", role: "Auction Callout Accent" }
+      ],
+      materiality: ["Heavy washed linen table drapes", "Hand-cast brass candelabras", "Preserved smilax foliage", "Smoked crystal stemware"],
+      lightingDesign: {
+        ambient: "1800K flickering real candlelight balanced with subtle amber perimeter washes.",
+        focal: "Narrow 12-degree ceiling pin-spots precisely framing table center floral scapes.",
+        accent: "Dramatic stage wash illuminating live auction lots and benefactor podium."
+      },
+      sensoryProfile: {
+        acoustic: "Warm resonant acoustic envelope supporting live chamber strings without audio harshness.",
+        olfactory: "Night-blooming jasmine, crushed pine needles, and beeswax candle aroma.",
+        taste: "Caviar crisps, braised prime tenderloin with parsnip silk, and vintage champagne pairings."
+      },
+      spatialZones: [
+        {
+          name: "Patron Welcome Foyer",
+          capacityPercentage: 100,
+          description: `Grand reception with champagne towers and ${capacity.checkInKiosks} express check-in points.`,
+          keyElements: ["Mirrored welcome bars", "Step-and-repeat botanical wall", "Coat check suite"]
+        },
+        {
+          name: "Grand Dining & Auction Hall",
+          capacityPercentage: 100,
+          description: `Formal seating facing the elevated live auction rostrum (~${capacity.sqFtTotal.toLocaleString()} sq ft).`,
+          keyElements: ["Botanical floral chandeliers", "Raised auction podium", "Dual high-lumen auction screens"]
+        }
+      ]
+    };
+  }
+
+  if (eventType === 'retreat') {
+    return {
+      conceptTitle: "Alpine Sanctuary & Strategic Clarity",
+      tagline: `Intimate leadership immersion engineered for ${guestCount} executive decision-makers.`,
+      narrative: `Designed specifically for ${guestCount} leaders. Stripping away corporate noise in favor of natural light, tactile timbers, and deep-focus fireside breakout spaces.`,
+      colorPalette: [
+        { name: "Deep Spruce", hex: "#064E3B", role: "Forest Immersion Base" },
+        { name: "Alpine Granite", hex: "#475569", role: "Mountain Rock Neutral" },
+        { name: "Raw Honeycomb", hex: "#D97706", role: "Fireside Warmth" },
+        { name: "Crisp Snow", hex: "#F8FAFC", role: "Clarity High-Contrast" },
+        { name: "Smoked Sage", hex: "#4B5563", role: "Quiet Subdued Tone" }
+      ],
+      materiality: ["Milled cedar planking", "Cognac harness leather", "Chunky wool blankets", "Handmade ceramic mugs"],
+      lightingDesign: {
+        ambient: "Natural full-spectrum daylighting transitioning into warm 2200K fireside hearth lighting.",
+        focal: "Precision task lighting on strategy boards and circular conference table.",
+        accent: "Concealed perimeter cove uplights highlighting timber ceiling beams."
+      },
+      sensoryProfile: {
+        acoustic: "Whisper-quiet acoustic dampening with crackling wood fire background.",
+        olfactory: "Pine resin, crisp mountain air, and roasted coffee beans.",
+        taste: "Chef-prepared seasonal farm breakfasts, brain-fuel superfoods, and cellar reserve Pinot Noir."
+      },
+      spatialZones: [
+        {
+          name: "Strategic Plenary Salon",
+          capacityPercentage: 100,
+          description: `Circular board seating for ${guestCount} leaders fostering open strategic debate.`,
+          keyElements: ["Custom oval timber table", "Interactive digital whiteboard", "Integrated power hubs"]
+        },
+        {
+          name: "Fireside Breakout Den",
+          capacityPercentage: 60,
+          description: "Comfortable fireside conversation pods for deep-dive team synthesis.",
+          keyElements: ["Stone hearth", "Leather club armchairs", "Espresso bar"]
+        }
+      ]
+    };
+  }
+
+  if (eventType === 'product_launch') {
+    return {
+      conceptTitle: "Brutalist Monolith & Kinetic Beam",
+      tagline: `Dramatic sensory unveiling engineered for ${guestCount} tastemakers and press.`,
+      narrative: `Engineered for ${guestCount} guests in raw architectural space. Heavy sub-bass acoustic profiling, razor-sharp optical beams, and high-impact reveal moments.`,
+      colorPalette: [
+        { name: "Raw Carbon", hex: "#09090B", role: "Void Foundation" },
+        { name: "Brushed Titanium", hex: "#71717A", role: "Industrial Sheen" },
+        { name: "Laser Crimson", hex: "#E11D48", role: "Reveal Pulse Accent" },
+        { name: "Stark White", hex: "#FFFFFF", role: "Optical Contrast" },
+        { name: "Ultraviolet", hex: "#7C3AED", role: "Atmospheric Wash" }
+      ],
+      materiality: ["Cold-rolled plate steel", "Textured raw concrete", "Smoked translucent acrylic", "Matte anodized hardware"],
+      lightingDesign: {
+        ambient: "Zero-light black box canvas with subtle floor-level guide beacons.",
+        focal: "Motorized moving head profile spots illuminating product pedestals upon cue.",
+        accent: "Pulsing kinetic linear LED tubes suspended overhead."
+      },
+      sensoryProfile: {
+        acoustic: "Sub-bass tactile sound system delivering visceral resonance without high-frequency ear fatigue.",
+        olfactory: "Ozone, fresh press paper, and minimalist metallic diffuser notes.",
+        taste: "Molecular cocktails, freeze-dried savory canapés, and nitrogen-chilled dessert bites."
+      },
+      spatialZones: [
+        {
+          name: "Black Box Reveal Stage",
+          capacityPercentage: 80,
+          description: `Central presentation theater accommodating ${guestCount} attendees with 360-degree sightlines.`,
+          keyElements: ["Motorized kabuki drop scrim", "Curved LED backdrop", "Hero product podium"]
+        },
+        {
+          name: "Hands-On Experience Laboratory",
+          capacityPercentage: 100,
+          description: `Interactive testing stations and ${capacity.barsRecommended} signature cocktail bars.`,
+          keyElements: ["Brushed aluminum display plinths", "Dedicated VIP press lounge", "Signature bar"]
         }
       ]
     };
@@ -780,7 +908,7 @@ function generateCreativeDirection(
   };
 }
 
-function generateLogisticsPlan(
+export function generateLogisticsPlan(
   eventType: EventType,
   days: number,
   durationSummary: string,

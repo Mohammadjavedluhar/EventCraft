@@ -15,13 +15,17 @@ export const BriefInput: React.FC<BriefInputProps> = ({
 }) => {
   const [inputText, setInputText] = useState(currentBrief);
 
+  React.useEffect(() => {
+    setInputText(currentBrief);
+  }, [currentBrief]);
+
   const handleSelectSample = (sampleText: string) => {
     setInputText(sampleText);
     onParse(sampleText);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!inputText.trim()) return;
     onParse(inputText);
   };
@@ -69,6 +73,12 @@ export const BriefInput: React.FC<BriefInputProps> = ({
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             rows={4}
             placeholder="Paste your event request brief here... (e.g., 'We need a 3-day tech conference for 450 guests in Austin with $120,000 budget, cyber-industrial aesthetic, keynotes, hackathon, and rooftop gala...')"
             className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-3 text-sm text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/80 transition-all font-sans leading-relaxed"
@@ -76,8 +86,9 @@ export const BriefInput: React.FC<BriefInputProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="text-xs text-neutral-500">
+          <div className="text-xs text-neutral-500 flex items-center gap-2">
             <span>Tip: Ambiguous guest counts or conflicting budget line items are safely reconciled.</span>
+            <span className="hidden sm:inline text-neutral-600 font-mono text-[11px]">(Ctrl+Enter to parse)</span>
           </div>
 
           <div className="flex items-center gap-2">

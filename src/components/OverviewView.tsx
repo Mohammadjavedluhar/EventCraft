@@ -172,21 +172,32 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
           </div>
 
           {onGuestCountChange && (
-            <div className="flex items-center gap-3 bg-neutral-950 p-2 rounded-lg border border-neutral-800 self-start sm:self-center">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400" />
-              <span className="text-xs text-neutral-400">Simulate Headcount:</span>
+            <div className="flex items-center gap-2.5 bg-neutral-950 p-2 rounded-lg border border-neutral-800 self-start sm:self-center">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <span className="text-xs text-neutral-400 whitespace-nowrap">Simulate Headcount:</span>
               <input
                 type="range"
-                min="10"
-                max="1000"
-                step="10"
+                min="5"
+                max="1500"
+                step="5"
                 value={eventData.guestCount.expected}
                 onChange={(e) => onGuestCountChange(parseInt(e.target.value, 10))}
-                className="w-28 accent-amber-400 cursor-pointer"
+                className="w-24 sm:w-28 accent-amber-400 cursor-pointer"
               />
-              <span className="font-mono tabular-nums text-xs font-bold text-amber-400 w-12 text-right">
-                {eventData.guestCount.expected} PAX
-              </span>
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  min="5"
+                  max="2500"
+                  value={eventData.guestCount.expected}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (!isNaN(val) && val > 0) onGuestCountChange(val);
+                  }}
+                  className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"
+                />
+                <span className="text-[11px] font-mono text-neutral-400">PAX</span>
+              </div>
             </div>
           )}
         </div>

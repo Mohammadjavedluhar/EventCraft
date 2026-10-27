@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Clock, ShieldAlert, CheckSquare, Square, MapPin, UserCheck, AlertTriangle } from 'lucide-react';
+import { Clock, ShieldAlert, CheckSquare, Square, MapPin, UserCheck, AlertTriangle, Copy, Check } from 'lucide-react';
 import { LogisticsPlan, TimelinePhase } from '../types/event';
 
 interface LogisticsViewProps {
@@ -8,12 +8,28 @@ interface LogisticsViewProps {
 
 export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
   const [completedMilestones, setCompletedMilestones] = useState<Record<number, boolean>>({});
+  const [copiedSchedule, setCopiedSchedule] = useState(false);
 
   const toggleMilestone = (idx: number) => {
     setCompletedMilestones((prev) => ({
       ...prev,
       [idx]: !prev[idx],
     }));
+  };
+
+  const handleCopySchedule = () => {
+    const text = logistics.runOfShow
+      .map(
+        (p) =>
+          `[${p.time}] ${p.title} (${p.duration})\nZone: ${p.zone} | Lead: ${p.logisticsLead}\nDetails: ${p.details}${
+            p.contingencyTrigger ? `\nContingency: ${p.contingencyTrigger}` : ''
+          }`
+      )
+      .join('\n\n');
+
+    navigator.clipboard.writeText(`=== MASTER EVENT RUN OF SHOW ===\n\n${text}`);
+    setCopiedSchedule(true);
+    setTimeout(() => setCopiedSchedule(false), 2000);
   };
 
   return (
@@ -45,9 +61,23 @@ export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
               Master Run of Show (Minute-by-Minute Sequence)
             </h4>
           </div>
-          <span className="text-xs text-neutral-400 font-mono">
-            Load-in 07:00 → Strike 19:30
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-neutral-400 font-mono hidden sm:inline">
+              Load-in 07:00 → Strike 19:30
+            </span>
+            <button
+              type="button"
+              onClick={handleCopySchedule}
+              className="px-2.5 py-1 text-xs text-neutral-300 hover:text-white bg-neutral-800 hover:bg-neutral-700 rounded-lg border border-neutral-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              {copiedSchedule ? (
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Copy className="w-3.5 h-3.5 text-neutral-400" />
+              )}
+              <span>{copiedSchedule ? 'Copied Schedule' : 'Copy Schedule'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="relative pl-6 space-y-6 before:content-[''] before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral-800">

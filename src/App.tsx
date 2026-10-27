@@ -11,6 +11,9 @@ import {
   parseEventRequestDeterministic, 
   generateGuestScaledCategories, 
   computeGuestCapacityMetrics, 
+  generateVendorRfpMatrix,
+  generateCreativeDirection,
+  generateLogisticsPlan,
   SAMPLE_BRIEFS 
 } from './utils/parser';
 import { StructuredEventData, BudgetBreakdown } from './types/event';
@@ -114,15 +117,22 @@ export function App() {
   };
 
   const handleUpdateBudget = (updatedBudget: BudgetBreakdown) => {
+    const updatedRfps = generateVendorRfpMatrix(
+      updatedBudget.categories,
+      eventData.guestCount.expected,
+      eventData.capacityMetrics
+    );
+
     setEventData((prev) => ({
       ...prev,
       budget: updatedBudget,
+      vendorRfpMatrix: updatedRfps,
     }));
   };
 
   // Live Guest-Driven Scaling Handler (Rule 1)
   const handleGuestCountChange = (newCount: number) => {
-    const clampedCount = Math.max(5, Math.min(2000, newCount));
+    const clampedCount = Math.max(5, Math.min(2500, newCount));
     const newCapacity = computeGuestCapacityMetrics(eventData.eventType, clampedCount);
     const newCategories = generateGuestScaledCategories(
       eventData.eventType,
@@ -133,6 +143,21 @@ export function App() {
     const perGuest = eventData.budget.totalBudgetAmount
       ? Math.round(eventData.budget.totalBudgetAmount / clampedCount)
       : null;
+
+    const newRfpMatrix = generateVendorRfpMatrix(newCategories, clampedCount, newCapacity);
+    const newCreative = generateCreativeDirection(
+      eventData.eventType,
+      eventData.rawInputBrief,
+      clampedCount,
+      newCapacity
+    );
+    const newLogistics = generateLogisticsPlan(
+      eventData.eventType,
+      eventData.duration.days,
+      eventData.duration.summary,
+      clampedCount,
+      newCapacity
+    );
 
     setEventData((prev) => ({
       ...prev,
@@ -157,6 +182,9 @@ export function App() {
           note: `Dynamically scaled for ${clampedCount} attendees (${newCapacity.tierLabel}).`,
         },
       },
+      vendorRfpMatrix: newRfpMatrix,
+      creativeDirection: newCreative,
+      logistics: newLogistics,
     }));
   };
 

@@ -105,16 +105,20 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
     }
   };
 
-  // Safe percentage adjustment that locks contingency at 10%
+  // Safe percentage adjustment that locks contingency at exactly 10.0%
   const handlePercentageChange = (id: string, newPercentage: number) => {
     if (id === contingencyCat.id) return; // Locked at 10.0%
 
     const nonContingency = categories.filter((c) => !c.isContingency);
     const otherNonContingency = nonContingency.filter((c) => c.id !== id);
-    const clampedNew = Math.max(1, Math.min(85, newPercentage));
+    const clampedNew = Math.max(1, Math.min(85, Math.round(newPercentage * 10) / 10));
     
-    const targetOtherSum = 90 - clampedNew;
+    // Remaining available for other non-contingency categories: exactly (90.0 - clampedNew)
+    const targetOtherSum = Math.round((90.0 - clampedNew) * 10) / 10;
     const currentOtherSum = otherNonContingency.reduce((acc, c) => acc + c.percentage, 0);
+
+    let accumulatedOther = 0;
+    const otherCount = otherNonContingency.length;
 
     const updatedCategories = categories.map((cat) => {
       if (cat.isContingency) {
@@ -131,12 +135,23 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
           allocatedAmount: currentTotalAmount ? Math.round(currentTotalAmount * (clampedNew / 100)) : undefined,
         };
       }
-      const ratio = currentOtherSum > 0 ? cat.percentage / currentOtherSum : 1 / otherNonContingency.length;
-      const recomputed = Math.round(targetOtherSum * ratio * 10) / 10;
+
+      const otherIdx = otherNonContingency.findIndex((o) => o.id === cat.id);
+      let recomputed: number;
+      if (otherIdx === otherCount - 1) {
+        // Last item absorbs any rounding difference to ensure exact 90.0 subtotal
+        recomputed = Math.round((targetOtherSum - accumulatedOther) * 10) / 10;
+      } else {
+        const ratio = currentOtherSum > 0 ? cat.percentage / currentOtherSum : 1 / otherCount;
+        recomputed = Math.round(targetOtherSum * ratio * 10) / 10;
+        accumulatedOther += recomputed;
+      }
+
+      const safePct = Math.max(0.5, recomputed);
       return {
         ...cat,
-        percentage: Math.max(1, recomputed),
-        allocatedAmount: currentTotalAmount ? Math.round(currentTotalAmount * (recomputed / 100)) : undefined,
+        percentage: safePct,
+        allocatedAmount: currentTotalAmount ? Math.round(currentTotalAmount * (safePct / 100)) : undefined,
       };
     });
 
@@ -201,18 +216,39 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setIsAdjustingPercentages(!isAdjustingPercentages)}
-              className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 cursor-pointer ${
-                isAdjustingPercentages
-                  ? 'bg-amber-400 text-neutral-950 border-amber-400 font-semibold'
-                  : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:text-white'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>{isAdjustingPercentages ? 'Lock Sliders' : 'Fine-Tune %'}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {onGuestCountChange && (
+                <div className="flex items-center gap-1.5 bg-neutral-950 px-2 py-1 rounded-lg border border-neutral-800">
+                  <Users className="w-3.5 h-3.5 text-neutral-400" />
+                  <span className="text-xs text-neutral-400 hidden sm:inline">Headcount:</span>
+                  <input
+                    type="number"
+                    min="5"
+                    max="2500"
+                    value={expectedGuests}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value, 10);
+                      if (!isNaN(val) && val > 0) onGuestCountChange(val);
+                    }}
+                    className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"
+                  />
+                  <span className="text-[11px] font-mono text-neutral-400">PAX</span>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setIsAdjustingPercentages(!isAdjustingPercentages)}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  isAdjustingPercentages
+                    ? 'bg-amber-400 text-neutral-950 border-amber-400 font-semibold'
+                    : 'bg-neutral-800 text-neutral-300 border-neutral-700 hover:text-white'
+                }`}
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>{isAdjustingPercentages ? 'Lock Sliders' : 'Fine-Tune %'}</span>
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleApplyTotalBudget} className="flex flex-col sm:flex-row items-center gap-3">
