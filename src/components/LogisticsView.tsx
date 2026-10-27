@@ -171,7 +171,7 @@ export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
                       </span>
                       <span
                         className={`text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded ${
-                          m.criticality === 'essential'
+                          m.criticality === 'HIGH PRIORITY' || m.criticality === 'ESSENTIAL'
                             ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
                             : 'bg-neutral-800 text-neutral-400'
                         }`}

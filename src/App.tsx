@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { Header } from './components/Header';
-import { BriefInput } from './components/BriefInput';
-import { OverviewView } from './components/OverviewView';
-import { BudgetAllocationView } from './components/BudgetAllocationView';
-import { LogisticsView } from './components/LogisticsView';
-import { CreativeDirectionView } from './components/CreativeDirectionView';
-import { VendorRfpView } from './components/VendorRfpView';
+import { Header, AppView } from './components/Header';
+import { CelebrationPlannerView } from './components/CelebrationPlannerView';
+import { NewPlanView } from './components/NewPlanView';
+import { CurrentPlanView } from './components/CurrentPlanView';
+import { AiAssistantDrawer } from './components/AiAssistantDrawer';
+import { SavedPlansDrawer } from './components/SavedPlansDrawer';
+import { FullChecklistModal } from './components/FullChecklistModal';
+import { BudgetDetailsModal } from './components/BudgetDetailsModal';
+import { SettingsModal } from './components/SettingsModal';
 import { ExportModal } from './components/ExportModal';
+import { ConfettiCanvas } from './components/ConfettiCanvas';
 import { 
   parseEventRequestDeterministic, 
   generateGuestScaledCategories, 
@@ -14,289 +17,446 @@ import {
   generateVendorRfpMatrix,
   generateCreativeDirection,
   generateLogisticsPlan,
-  SAMPLE_BRIEFS 
+  INSTANT_PRESETS 
 } from './utils/parser';
-import { StructuredEventData, BudgetBreakdown } from './types/event';
+import { StructuredEventData, EventType, BudgetCategory } from './types/event';
+import { CurrencyCode } from './utils/currency';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<string>('overview');
-  const [currentBrief, setCurrentBrief] = useState<string>(SAMPLE_BRIEFS[0].text);
-  const [eventData, setEventData] = useState<StructuredEventData>(() =>
-    parseEventRequestDeterministic(SAMPLE_BRIEFS[0].text)
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
-  const [parseEngineSource, setParseEngineSource] = useState<'deterministic' | 'gemini_flash'>('deterministic');
+  // Main view state: 'planner' (Screenshot 3) | 'current_plan' (Screenshot 1) | 'new_plan' (Screenshot 2)
+  const [activeView, setActiveView] = useState<AppView>('planner');
 
-  const handleParse = async (briefText: string) => {
+  // Seed saved plans with the first two high-fidelity presets
+  const [savedPlans, setSavedPlans] = useState<StructuredEventData[]>(() => {
+    const p1 = parseEventRequestDeterministic(INSTANT_PRESETS[0].text, {
+      title: INSTANT_PRESETS[0].title,
+      eventType: INSTANT_PRESETS[0].category,
+      cityAndLocation: INSTANT_PRESETS[0].cityAndLocation,
+      targetEventDate: INSTANT_PRESETS[0].targetEventDate,
+      guestCount: INSTANT_PRESETS[0].guestCount,
+      totalBudget: INSTANT_PRESETS[0].totalBudget,
+      currency: INSTANT_PRESETS[0].currency,
+    });
+    p1.id = 'plan-preset-wedding';
+
+    const p2 = parseEventRequestDeterministic(INSTANT_PRESETS[1].text, {
+      title: INSTANT_PRESETS[1].title,
+      eventType: INSTANT_PRESETS[1].category,
+      cityAndLocation: INSTANT_PRESETS[1].cityAndLocation,
+      targetEventDate: INSTANT_PRESETS[1].targetEventDate,
+      guestCount: INSTANT_PRESETS[1].guestCount,
+      totalBudget: INSTANT_PRESETS[1].totalBudget,
+      currency: INSTANT_PRESETS[1].currency,
+    });
+    p2.id = 'plan-preset-birthday';
+
+    return [p1, p2];
+  });
+
+  const [currentPlan, setCurrentPlan] = useState<StructuredEventData>(() => {
+    return savedPlans[0];
+  });
+
+  // Modal and drawer visibility flags
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState<boolean>(false);
+  const [isSavedPlansOpen, setIsSavedPlansOpen] = useState<boolean>(false);
+  const [isChecklistOpen, setIsChecklistOpen] = useState<boolean>(false);
+  const [isBudgetDetailsOpen, setIsBudgetDetailsOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [isExportOpen, setIsExportOpen] = useState<boolean>(false);
+
+  // Loading and celebration confetti states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [showConfetti, setShowConfetti] = useState<boolean>(false);
+
+  // Generate / Architect a new plan from the NewPlanView form
+  const handleGeneratePlan = async (formData: {
+    title: string;
+    eventType: EventType;
+    cityAndLocation: string;
+    targetEventDate: string;
+    guestCount: number;
+    totalBudget: number;
+    currency: CurrencyCode;
+    notes?: string;
+  }) => {
     setIsLoading(true);
-    setCurrentBrief(briefText);
+
+    const briefCombined = `${formData.notes || ''} Event for ${formData.guestCount} guests in ${formData.cityAndLocation} with ${formData.currency} ${formData.totalBudget} budget.`;
 
     try {
       const response = await fetch('/api/parse-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief: briefText }),
+        body: JSON.stringify({
+          brief: briefCombined,
+          options: {
+            title: formData.title,
+            eventType: formData.eventType,
+            cityAndLocation: formData.cityAndLocation,
+            targetEventDate: formData.targetEventDate,
+            guestCount: formData.guestCount,
+            totalBudget: formData.totalBudget,
+            currency: formData.currency,
+          },
+        }),
       });
 
       if (response.ok) {
         const result = await response.json();
         if (result.source === 'gemini_flash' && result.data && result.data.budget) {
           const aiData = result.data;
-          const deterministicBaseline = parseEventRequestDeterministic(briefText);
+          const baseline = parseEventRequestDeterministic(briefCombined, formData);
 
-          const expectedGuests = aiData.guestCount?.expected || deterministicBaseline.guestCount.expected;
-          const capacityMetrics = computeGuestCapacityMetrics(
-            aiData.eventType || deterministicBaseline.eventType,
-            expectedGuests
-          );
+          const expectedGuests = formData.guestCount || aiData.guestCount?.expected || baseline.guestCount.expected;
+          const capacityMetrics = computeGuestCapacityMetrics(formData.eventType, expectedGuests);
 
-          // Guarantee strict 10% contingency rule and guest scaling on AI output
-          let categories = generateGuestScaledCategories(
-            aiData.eventType || deterministicBaseline.eventType,
+          const categories = generateGuestScaledCategories(
+            formData.eventType,
             expectedGuests,
-            aiData.budget?.totalBudgetAmount || null
+            formData.totalBudget
           );
 
-          const isFallback = aiData.guestCount?.fallbackApplied || deterministicBaseline.guestCount.fallbackApplied;
-          const fallbackDesc = aiData.guestCount?.fallbackDescription || deterministicBaseline.guestCount.fallbackDescription;
-
-          const combinedData: StructuredEventData = {
-            id: `evt-${Date.now()}`,
+          const newMasterplan: StructuredEventData = {
+            id: `plan-${Date.now()}`,
             createdAt: new Date().toISOString(),
-            rawInputBrief: briefText,
-            title: aiData.title || deterministicBaseline.title,
-            eventType: aiData.eventType || deterministicBaseline.eventType,
-            format: aiData.format || deterministicBaseline.format,
+            rawInputBrief: briefCombined,
+            title: formData.title || aiData.title || baseline.title,
+            eventType: formData.eventType,
+            format: 'in_person',
+            cityAndLocation: formData.cityAndLocation,
+            targetEventDate: formData.targetEventDate,
             guestCount: {
-              min: aiData.guestCount?.min || deterministicBaseline.guestCount.min,
-              max: aiData.guestCount?.max || deterministicBaseline.guestCount.max,
+              min: Math.round(expectedGuests * 0.9),
+              max: Math.round(expectedGuests * 1.1),
               expected: expectedGuests,
-              isEstimated: aiData.guestCount?.isEstimated ?? deterministicBaseline.guestCount.isEstimated,
-              fallbackApplied: isFallback,
-              fallbackDescription: isFallback ? fallbackDesc : undefined,
+              isEstimated: false,
+              fallbackApplied: false,
             },
             capacityMetrics,
-            duration: aiData.duration || deterministicBaseline.duration,
-            targetSeasonOrDate: aiData.targetSeasonOrDate || deterministicBaseline.targetSeasonOrDate,
+            duration: baseline.duration,
+            targetSeasonOrDate: formData.targetEventDate,
             location: {
-              cityOrRegion: aiData.location?.cityOrRegion || deterministicBaseline.location.cityOrRegion,
+              cityOrRegion: formData.cityAndLocation,
               venueTypeRecommendation: capacityMetrics.recommendedVenueStyle,
               spaceRequirementsSqFt: capacityMetrics.sqFtTotal,
             },
             budget: {
-              ...deterministicBaseline.budget,
-              totalBudgetProvided: !!aiData.budget?.totalBudgetAmount,
-              totalBudgetAmount: aiData.budget?.totalBudgetAmount || null,
+              ...baseline.budget,
+              totalBudgetProvided: true,
+              totalBudgetAmount: formData.totalBudget,
+              currency: formData.currency,
               categories,
             },
-            creativeDirection: aiData.creativeDirection || deterministicBaseline.creativeDirection,
-            logistics: deterministicBaseline.logistics,
-            vendorRfpMatrix: deterministicBaseline.vendorRfpMatrix,
-            ambiguitiesAndFallbacks: [
-              ...(deterministicBaseline.ambiguitiesAndFallbacks || []),
-              ...(aiData.ambiguitiesAndFallbacks || []),
-            ],
+            creativeDirection: aiData.creativeDirection || baseline.creativeDirection,
+            logistics: baseline.logistics,
+            vendorRfpMatrix: baseline.vendorRfpMatrix,
+            ambiguitiesAndFallbacks: baseline.ambiguitiesAndFallbacks,
           };
 
-          setEventData(combinedData);
-          setParseEngineSource('gemini_flash');
+          setCurrentPlan(newMasterplan);
+          setSavedPlans((prev) => [newMasterplan, ...prev.filter((p) => p.id !== newMasterplan.id)]);
           setIsLoading(false);
+          setShowConfetti(true);
+          setActiveView('current_plan');
           return;
         }
       }
     } catch (err) {
-      console.warn('API route fallback to local parser:', err);
+      console.warn('Backend proxy unavailable, utilizing deterministic engine:', err);
     }
 
-    // High-performance deterministic coordinator fallback
-    const parsed = parseEventRequestDeterministic(briefText);
-    setEventData(parsed);
-    setParseEngineSource('deterministic');
+    // High performance deterministic fallback
+    const deterministicPlan = parseEventRequestDeterministic(briefCombined, formData);
+    deterministicPlan.id = `plan-${Date.now()}`;
+    setCurrentPlan(deterministicPlan);
+    setSavedPlans((prev) => [deterministicPlan, ...prev.filter((p) => p.id !== deterministicPlan.id)]);
+    setIsLoading(false);
+    setShowConfetti(true);
+    setActiveView('current_plan');
+  };
+
+  // AI Assistant modification handler
+  const handleApplyAssistantModification = async (instruction: string) => {
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/parse-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          brief: `${currentPlan.rawInputBrief}\n\nClient Directive Modification: ${instruction}`,
+          options: {
+            title: currentPlan.title,
+            eventType: currentPlan.eventType,
+            cityAndLocation: currentPlan.cityAndLocation,
+            targetEventDate: currentPlan.targetEventDate,
+            guestCount: currentPlan.guestCount.expected,
+            totalBudget: currentPlan.budget.totalBudgetAmount || 500000,
+            currency: currentPlan.budget.currency,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data) {
+          const aiData = result.data;
+          const updatedCategories = generateGuestScaledCategories(
+            currentPlan.eventType,
+            currentPlan.guestCount.expected,
+            currentPlan.budget.totalBudgetAmount
+          );
+
+          const updated: StructuredEventData = {
+            ...currentPlan,
+            title: aiData.title || currentPlan.title,
+            budget: {
+              ...currentPlan.budget,
+              categories: updatedCategories,
+            },
+            creativeDirection: aiData.creativeDirection || currentPlan.creativeDirection,
+          };
+
+          setCurrentPlan(updated);
+          setSavedPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch {
+      // Deterministic adjustment
+    }
+
+    // Deterministic adjustment for quick guest count modifications
+    const countMatch = instruction.match(/(\d+)\s*(?:guests|attendees|people)/i);
+    if (countMatch) {
+      const newCount = parseInt(countMatch[1], 10);
+      const newCapacity = computeGuestCapacityMetrics(currentPlan.eventType, newCount);
+      const newCategories = generateGuestScaledCategories(
+        currentPlan.eventType,
+        newCount,
+        currentPlan.budget.totalBudgetAmount
+      );
+      const updatedRfps = generateVendorRfpMatrix(newCategories, newCount, newCapacity);
+
+      const updated: StructuredEventData = {
+        ...currentPlan,
+        guestCount: {
+          ...currentPlan.guestCount,
+          expected: newCount,
+          min: Math.round(newCount * 0.9),
+          max: Math.round(newCount * 1.1),
+        },
+        capacityMetrics: newCapacity,
+        budget: {
+          ...currentPlan.budget,
+          categories: newCategories,
+        },
+        vendorRfpMatrix: updatedRfps,
+      };
+
+      setCurrentPlan(updated);
+      setSavedPlans((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    }
+
     setIsLoading(false);
   };
 
-  const handleUpdateBudget = (updatedBudget: BudgetBreakdown) => {
-    const updatedRfps = generateVendorRfpMatrix(
-      updatedBudget.categories,
-      eventData.guestCount.expected,
-      eventData.capacityMetrics
+  // Update category percentage from modal
+  const handleUpdateCategoryPercentage = (categoryId: string, newPercentage: number) => {
+    // Preserve 10% contingency rule
+    if (categoryId === 'contingency') return;
+
+    const currentCategories = currentPlan.budget.categories;
+    const targetCat = currentCategories.find((c) => c.id === categoryId);
+    if (!targetCat) return;
+
+    const diff = newPercentage - targetCat.percentage;
+    const otherNonContingency = currentCategories.filter(
+      (c) => c.id !== categoryId && !c.isContingency
     );
 
-    setEventData((prev) => ({
-      ...prev,
-      budget: updatedBudget,
-      vendorRfpMatrix: updatedRfps,
-    }));
-  };
+    if (otherNonContingency.length === 0) return;
 
-  // Live Guest-Driven Scaling Handler (Rule 1)
-  const handleGuestCountChange = (newCount: number) => {
-    const clampedCount = Math.max(5, Math.min(2500, newCount));
-    const newCapacity = computeGuestCapacityMetrics(eventData.eventType, clampedCount);
-    const newCategories = generateGuestScaledCategories(
-      eventData.eventType,
-      clampedCount,
-      eventData.budget.totalBudgetAmount
-    );
+    const adjustmentPerCat = diff / otherNonContingency.length;
 
-    const perGuest = eventData.budget.totalBudgetAmount
-      ? Math.round(eventData.budget.totalBudgetAmount / clampedCount)
-      : null;
+    const updatedCategories: BudgetCategory[] = currentCategories.map((c) => {
+      if (c.id === categoryId) {
+        return {
+          ...c,
+          percentage: newPercentage,
+          allocatedAmount: currentPlan.budget.totalBudgetAmount
+            ? Math.round((currentPlan.budget.totalBudgetAmount * newPercentage) / 100)
+            : undefined,
+        };
+      }
+      if (!c.isContingency) {
+        const adjusted = Math.max(1, Math.round((c.percentage - adjustmentPerCat) * 10) / 10);
+        return {
+          ...c,
+          percentage: adjusted,
+          allocatedAmount: currentPlan.budget.totalBudgetAmount
+            ? Math.round((currentPlan.budget.totalBudgetAmount * adjusted) / 100)
+            : undefined,
+        };
+      }
+      return c;
+    });
 
-    const newRfpMatrix = generateVendorRfpMatrix(newCategories, clampedCount, newCapacity);
-    const newCreative = generateCreativeDirection(
-      eventData.eventType,
-      eventData.rawInputBrief,
-      clampedCount,
-      newCapacity
-    );
-    const newLogistics = generateLogisticsPlan(
-      eventData.eventType,
-      eventData.duration.days,
-      eventData.duration.summary,
-      clampedCount,
-      newCapacity
-    );
-
-    setEventData((prev) => ({
-      ...prev,
-      guestCount: {
-        ...prev.guestCount,
-        expected: clampedCount,
-        min: Math.round(clampedCount * 0.9),
-        max: Math.round(clampedCount * 1.1),
-      },
-      capacityMetrics: newCapacity,
-      location: {
-        ...prev.location,
-        venueTypeRecommendation: newCapacity.recommendedVenueStyle,
-        spaceRequirementsSqFt: newCapacity.sqFtTotal,
-      },
+    const updatedPlan: StructuredEventData = {
+      ...currentPlan,
       budget: {
-        ...prev.budget,
-        categories: newCategories,
-        costPerGuestBenchmark: {
-          estimatedPerGuest: perGuest,
-          tier: perGuest && perGuest < 200 ? 'budget' : perGuest && perGuest > 800 ? 'luxury' : 'moderate',
-          note: `Dynamically scaled for ${clampedCount} attendees (${newCapacity.tierLabel}).`,
-        },
+        ...currentPlan.budget,
+        categories: updatedCategories,
       },
-      vendorRfpMatrix: newRfpMatrix,
-      creativeDirection: newCreative,
-      logistics: newLogistics,
-    }));
+    };
+
+    setCurrentPlan(updatedPlan);
+    setSavedPlans((prev) => prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p)));
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col selection:bg-amber-400 selection:text-neutral-950">
-      {/* Top Bar Contract Compliant Header */}
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onOpenExport={() => setIsExportOpen(true)}
-        hasData={!!eventData}
+    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
+      
+      {/* Celebration Confetti Burst upon Plan Generation */}
+      <ConfettiCanvas
+        active={showConfetti}
+        onComplete={() => setShowConfetti(false)}
       />
 
-      {/* Main Workspace Canvas */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        
-        {/* Natural Language Brief Parser Section */}
-        <BriefInput
-          currentBrief={currentBrief}
-          onParse={handleParse}
-          isLoading={isLoading}
-        />
+      {/* Top Header Matching Screenshots 1 & 2 */}
+      <Header
+        activeView={activeView}
+        setActiveView={setActiveView}
+        savedPlansCount={savedPlans.length}
+        onOpenSavedPlans={() => setIsSavedPlansOpen(true)}
+        onOpenAiAssistant={() => setIsAiAssistantOpen(true)}
+        onOpenExport={() => setIsExportOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        hasCurrentPlan={!!currentPlan}
+      />
 
-        {/* Tab Viewport Navigation Bar (Mobile / Responsive) */}
-        <div className="flex md:hidden items-center gap-1 overflow-x-auto pb-2 border-b border-neutral-800 text-xs">
-          {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'budget', label: 'Budget & 10% Buffer' },
-            { id: 'logistics', label: 'Logistics' },
-            { id: 'creative', label: 'Creative' },
-            { id: 'rfp', label: 'RFPs' },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-3 py-1.5 rounded-lg whitespace-nowrap cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-amber-400 text-neutral-950 font-semibold'
-                  : 'bg-neutral-900 text-neutral-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {/* Main Content Area */}
+      <main className="flex-1">
+        {activeView === 'planner' && (
+          <CelebrationPlannerView
+            onPlanBuilt={(summary) => {
+              setShowConfetti(true);
+              const updated = parseEventRequestDeterministic(
+                `${summary.specialRequests || ''} ${summary.style} ${summary.eventType} celebration for ${summary.numberOfGuests} guests on ${summary.eventDate} with ₹${summary.totalBudget} budget. Priorities: ${summary.selectedPriorities.join(', ')}`,
+                {
+                  title: summary.eventName,
+                  eventType: summary.eventType,
+                  cityAndLocation: 'Udaipur, Rajasthan',
+                  targetEventDate: summary.eventDate,
+                  guestCount: summary.numberOfGuests,
+                  totalBudget: summary.totalBudget,
+                  currency: 'INR',
+                }
+              );
+              setCurrentPlan(updated);
+              setSavedPlans((prev) => [updated, ...prev.filter((p) => p.id !== updated.id)]);
+            }}
+            onOpenMasterplan={() => setActiveView('current_plan')}
+          />
+        )}
 
-        {/* Workspace Active Views */}
-        <div className="transition-opacity duration-200">
-          {activeTab === 'overview' && (
-            <OverviewView
-              eventData={eventData}
-              onNavigateTab={(tabId) => setActiveTab(tabId)}
-              onGuestCountChange={handleGuestCountChange}
-            />
-          )}
+        {activeView === 'current_plan' && (
+          <CurrentPlanView
+            eventData={currentPlan}
+            onOpenChecklistModal={() => setIsChecklistOpen(true)}
+            onOpenBudgetModal={() => setIsBudgetDetailsOpen(true)}
+          />
+        )}
 
-          {activeTab === 'budget' && (
-            <BudgetAllocationView
-              budget={eventData.budget}
-              expectedGuests={eventData.guestCount.expected}
-              capacityMetrics={eventData.capacityMetrics}
-              onUpdateBudget={handleUpdateBudget}
-              onGuestCountChange={handleGuestCountChange}
-            />
-          )}
-
-          {activeTab === 'logistics' && (
-            <LogisticsView logistics={eventData.logistics} />
-          )}
-
-          {activeTab === 'creative' && (
-            <CreativeDirectionView creative={eventData.creativeDirection} />
-          )}
-
-          {activeTab === 'rfp' && (
-            <VendorRfpView
-              rfpItems={eventData.vendorRfpMatrix}
-              eventTitle={eventData.title}
-            />
-          )}
-        </div>
+        {activeView === 'new_plan' && (
+          <NewPlanView
+            onGeneratePlan={handleGeneratePlan}
+            isLoading={isLoading}
+          />
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800/80 bg-neutral-950 py-6 mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-neutral-300">EventCraft Logistics Coordinator</span>
-            <span aria-hidden="true">·</span>
-            <span>Guest-Driven Scaling Engine</span>
-            <span aria-hidden="true">·</span>
-            <span className="text-amber-400/90 font-medium">10% Contingency Buffer for Last-Minute RSVPs</span>
+      <footer className="border-t border-slate-800/80 bg-[#090e1a] py-6 mt-12 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-bold text-slate-300">EventGenie AI</span>
+            <span>·</span>
+            <span>Intelligent Celebration Architect</span>
+            <span>·</span>
+            <span className="text-amber-400 font-medium">10% Contingency Safety Reserve Locked</span>
+            <span>·</span>
+            <span className="text-slate-400">Zero Price Hallucination Policy</span>
           </div>
 
-          <div className="flex items-center gap-4 text-neutral-400">
-            <span>Engine: {parseEngineSource === 'gemini_flash' ? 'Gemini 3.8 Flash' : 'Deterministic Coordinator'}</span>
+          <div className="flex items-center gap-4 text-slate-400">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Engine Safeguards
+            </button>
+            <span>·</span>
             <button
               onClick={() => setIsExportOpen(true)}
-              className="text-amber-400 hover:text-amber-300 font-medium cursor-pointer"
+              className="text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
             >
-              Export JSON / Spec
+              Export Dossier
             </button>
           </div>
         </div>
       </footer>
 
-      {/* Export Modal */}
+      {/* Slide-over Drawers */}
+      <AiAssistantDrawer
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+        eventData={currentPlan}
+        onApplyModification={handleApplyAssistantModification}
+        isLoading={isLoading}
+      />
+
+      <SavedPlansDrawer
+        isOpen={isSavedPlansOpen}
+        onClose={() => setIsSavedPlansOpen(false)}
+        savedPlans={savedPlans}
+        currentPlanId={currentPlan?.id || ''}
+        onSelectPlan={(plan) => {
+          setCurrentPlan(plan);
+          setActiveView('current_plan');
+        }}
+        onDeletePlan={(planId) => {
+          setSavedPlans((prev) => prev.filter((p) => p.id !== planId));
+        }}
+      />
+
+      {/* Modals */}
+      <FullChecklistModal
+        isOpen={isChecklistOpen}
+        onClose={() => setIsChecklistOpen(false)}
+        milestones={currentPlan?.logistics?.keyMilestones || []}
+      />
+
+      <BudgetDetailsModal
+        isOpen={isBudgetDetailsOpen}
+        onClose={() => setIsBudgetDetailsOpen(false)}
+        budget={currentPlan.budget}
+        onUpdateCategoryPercentage={handleUpdateCategoryPercentage}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
       <ExportModal
         isOpen={isExportOpen}
         onClose={() => setIsExportOpen(false)}
-        eventData={eventData}
+        eventData={currentPlan}
       />
+
     </div>
   );
 }

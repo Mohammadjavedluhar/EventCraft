@@ -36,12 +36,12 @@ ${eventData.guestCount.fallbackApplied ? `**Headcount Fallback Applied:** ${even
 ## 1. Budget Allocation Strategy (10% Contingency Buffer Enforced)
 *Policy: Specific vendor quotes are subject to competitive RFP bidding. Non-hallucinated percentage distributions.*
 
-${eventData.budget.totalBudgetAmount ? `**Total Declared Budget:** $${eventData.budget.totalBudgetAmount.toLocaleString()} USD\n` : ''}
+${eventData.budget.totalBudgetAmount ? `**Total Declared Budget:** ${eventData.budget.currency} ${eventData.budget.totalBudgetAmount.toLocaleString()}\n` : ''}
 ${eventData.budget.categories
   .map(
     (c) =>
       `- **${c.name}:** ${c.percentage}% ${
-        c.allocatedAmount ? `($${c.allocatedAmount.toLocaleString()} USD)` : ''
+        c.allocatedAmount ? `(${eventData.budget.currency} ${c.allocatedAmount.toLocaleString()})` : ''
       } ${c.isContingency ? '*(MANDATORY CONTINGENCY BUFFER)*' : ''}\n  *Scope:* ${c.scopeNotes.join(', ')}`
   )
   .join('\n\n')}

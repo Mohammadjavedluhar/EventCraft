@@ -1,11 +1,14 @@
+import { CurrencyCode } from '../utils/currency';
+
 export type EventType = 
-  | 'conference'
-  | 'gala'
   | 'wedding'
+  | 'private_celebration'
+  | 'conference'
+  | 'festival'
+  | 'gala'
   | 'product_launch'
   | 'retreat'
   | 'exhibition'
-  | 'private_celebration'
   | 'other';
 
 export type EventFormat = 'in_person' | 'hybrid' | 'virtual';
@@ -21,24 +24,25 @@ export interface GuestCapacityMetrics {
   barsRecommended: number;
   restroomsRecommended: number;
   checkInKiosks: number;
-  contingencyAbsorbedGuests: number; // How many last-minute arrivals the 10% buffer absorbs
+  contingencyAbsorbedGuests: number;
   cateringDynamicRationale: string;
 }
 
 export interface BudgetCategory {
   id: string;
   name: string;
-  percentage: number; // e.g. 25 for 25%
+  percentage: number; // e.g. 30 for 30%
   description: string;
-  allocatedAmount?: number; // Calculated only if total budget is supplied
+  allocatedAmount?: number;
+  color?: string; // Hex color for SVG Donut and Bar charts
   isContingency?: boolean; // Strictly true for the 10% contingency buffer
   scopeNotes: string[];
 }
 
 export interface BudgetBreakdown {
   totalBudgetProvided: boolean;
-  totalBudgetAmount: number | null; // e.g. 120000 or null if unspecified
-  currency: string;
+  totalBudgetAmount: number | null;
+  currency: CurrencyCode;
   contingencyPercentage: number; // Strictly 10.0
   categories: BudgetCategory[];
   costPerGuestBenchmark?: {
@@ -64,6 +68,16 @@ export interface TimelinePhase {
   logisticsLead: string;
   details: string;
   contingencyTrigger?: string;
+}
+
+export interface MilestoneItem {
+  id: string;
+  timing: string;
+  category: string;
+  dateDisplay: string;
+  task: string;
+  criticality: 'HIGH PRIORITY' | 'MEDIUM PRIORITY' | 'ESSENTIAL';
+  completed?: boolean;
 }
 
 export interface VendorRfpItem {
@@ -107,11 +121,7 @@ export interface CreativeDirection {
 
 export interface LogisticsPlan {
   runOfShow: TimelinePhase[];
-  keyMilestones: {
-    timing: string;
-    task: string;
-    criticality: 'essential' | 'recommended' | 'optional';
-  }[];
+  keyMilestones: MilestoneItem[];
   riskMatrix: {
     risk: string;
     impact: 'low' | 'moderate' | 'critical';
@@ -127,13 +137,15 @@ export interface StructuredEventData {
   title: string;
   eventType: EventType;
   format: EventFormat;
+  cityAndLocation: string;
+  targetEventDate: string;
   guestCount: {
     min: number;
     max: number;
     expected: number;
     isEstimated: boolean;
     fallbackApplied: boolean;
-    fallbackDescription?: string; // Explicit statement required by Rule 4
+    fallbackDescription?: string;
   };
   capacityMetrics: GuestCapacityMetrics;
   duration: {
