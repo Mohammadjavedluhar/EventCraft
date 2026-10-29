@@ -5,7 +5,23 @@ import {
   EVENT_COORDINATOR_SYSTEM_PROMPT,
 } from '../src/utils/sharedEventLogic';
 
-export default async function handler(req: any, res: any) {
+interface ApiRequest {
+  method?: string;
+  body?: {
+    brief?: string;
+    format?: string;
+  };
+}
+
+interface ApiResponse {
+  setHeader(name: string, value: string): void;
+  removeHeader?(name: string): void;
+  status(code: number): ApiResponse;
+  json(body: unknown): void;
+  end(): void;
+}
+
+export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,17 +31,20 @@ export default async function handler(req: any, res: any) {
   }
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.status(200).end();
+    return;
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   try {
     const { brief } = req.body || {};
     if (!brief || typeof brief !== 'string') {
-      return res.status(400).json({ error: 'Event request brief text is required.' });
+      res.status(400).json({ error: 'Event request brief text is required.' });
+      return;
     }
 
     const cleanBrief = brief.trim();
@@ -33,15 +52,17 @@ export default async function handler(req: any, res: any) {
     // Ultra-fast compact schema extraction using shared utility
     if (req.body?.format === 'compact') {
       const compactData = extractCompactEventData(cleanBrief);
-      return res.status(200).json(compactData);
+      res.status(200).json(compactData);
+      return;
     }
 
     const hasValidKey = validateApiKey(process.env.GEMINI_API_KEY);
     if (!hasValidKey) {
-      return res.status(200).json({
+      res.status(200).json({
         source: 'client_deterministic',
         message: 'Processed via client deterministic coordinator engine.',
       });
+      return;
     }
 
     const ai = new GoogleGenAI({
@@ -60,10 +81,10 @@ export default async function handler(req: any, res: any) {
     });
 
     const parsedJson = JSON.parse(response.text || '{}');
-    return res.status(200).json({ source: 'gemini_flash', data: parsedJson });
+    res.status(200).json({ source: 'gemini_flash', data: parsedJson });
   } catch {
     // Graceful silent fallback to deterministic coordinator engine
-    return res.status(200).json({
+    res.status(200).json({
       source: 'client_deterministic',
       message: 'Fallback to deterministic coordinator engine.',
     });

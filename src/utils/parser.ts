@@ -176,8 +176,24 @@ export interface ParseOptions {
   currency?: CurrencyCode;
 }
 
+// Pre-compiled regular expressions for high-throughput linear parsing
+const RANGE_GUEST_REGEX = /\b([\d,]+)\s*(?:-|to)\s*([\d,]+)\b/i;
+const SINGLE_GUEST_REGEX = /\b([\d,]+)\s*(?:guests?|attendees?|people|participants|pax|students?|developers?|members?)\b/i;
+const FOR_GUEST_REGEX = /\b(?:for|about|approx|roughly|around)\s*([\d,]+)\b/i;
+const INR_LAKH_REGEX = /\b(\d+(?:\.\d+)?)\s*(?:lakhs?|lac|l)\b/i;
+const INR_RUPEE_REGEX = /₹\s*(\d[\d,]*(?:\.\d+)?)/;
+const GENERAL_BUDGET_REGEX = /\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|m)?\b/i;
+
+// In-memory memoization cache for deterministic event synthesis
+const parserCache = new Map<string, StructuredEventData>();
+const MAX_PARSER_CACHE_SIZE = 200;
+
 export function parseEventRequestDeterministic(rawInput: string, options?: ParseOptions): StructuredEventData {
   const text = rawInput.trim();
+  const cacheKey = `${text}::${JSON.stringify(options || {})}`;
+  if (!options && parserCache.has(cacheKey)) {
+    return parserCache.get(cacheKey)!;
+  }
   const lower = text.toLowerCase();
   const ambiguities: AmbiguityResolution[] = [];
 
@@ -221,14 +237,14 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     minGuests = Math.round(expectedGuests * 0.9);
     maxGuests = Math.round(expectedGuests * 1.1);
   } else {
-    // FIX: ReDoS Prevention - linear regex without backtracking
-    const rangeMatch = text.match(/\b(\d+)\s*(?:-|to)\s*(\d+)\b/i);
-    const singleMatch = text.match(/\b(\d+)\s*(?:guests?|attendees?|people|participants|pax)\b/i);
-    const forMatch = text.match(/\b(?:for|about|approx|roughly|around)\s*(\d+)\b/i);
+    // Linear regex matching using precompiled instances
+    const rangeMatch = text.match(RANGE_GUEST_REGEX);
+    const singleMatch = text.match(SINGLE_GUEST_REGEX);
+    const forMatch = text.match(FOR_GUEST_REGEX);
 
     if (rangeMatch) {
-      minGuests = parseInt(rangeMatch[1], 10);
-      maxGuests = parseInt(rangeMatch[2], 10);
+      minGuests = parseInt(rangeMatch[1].replace(/,/g, ''), 10);
+      maxGuests = parseInt(rangeMatch[2].replace(/,/g, ''), 10);
       if (minGuests > maxGuests) {
         const tmp = minGuests;
         minGuests = maxGuests;
@@ -237,11 +253,11 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
       expectedGuests = Math.round((minGuests + maxGuests) / 2);
       isEstimated = true;
     } else if (singleMatch) {
-      expectedGuests = parseInt(singleMatch[1], 10);
+      expectedGuests = parseInt(singleMatch[1].replace(/,/g, ''), 10);
       minGuests = Math.round(expectedGuests * 0.9);
       maxGuests = Math.round(expectedGuests * 1.1);
     } else if (forMatch) {
-      expectedGuests = parseInt(forMatch[1], 10);
+      expectedGuests = parseInt(forMatch[1].replace(/,/g, ''), 10);
       minGuests = Math.round(expectedGuests * 0.9);
       maxGuests = Math.round(expectedGuests * 1.1);
     } else {
@@ -314,10 +330,10 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
   if (totalBudgetAmount && totalBudgetAmount > 0) {
     totalBudgetProvided = true;
   } else {
-    // FIX: ReDoS Prevention - linear regex without backtracking
-    const inrLakhMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:lakhs?|lac|l)\b/i);
-    const inrRupeeMatch = text.match(/₹\s*(\d[\d,]*(?:\.\d+)?)/);
-    const generalBudgetMatch = text.match(/\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|m)?\b/i);
+    // Linear budget matching using precompiled instances
+    const inrLakhMatch = text.match(INR_LAKH_REGEX);
+    const inrRupeeMatch = text.match(INR_RUPEE_REGEX);
+    const generalBudgetMatch = text.match(GENERAL_BUDGET_REGEX);
 
     if (inrLakhMatch) {
       totalBudgetAmount = parseFloat(inrLakhMatch[1].replace(/,/g, '')) * 100000;
@@ -396,7 +412,7 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     else title = `Curated Event Masterplan (${expectedGuests} Guests)`;
   }
 
-  return {
+  const result: StructuredEventData = {
     id: `evt-${Date.now()}`,
     createdAt: new Date().toISOString(),
     rawInputBrief: text,
@@ -431,6 +447,16 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     vendorRfpMatrix,
     ambiguitiesAndFallbacks: ambiguities
   };
+
+  if (!options) {
+    if (parserCache.size >= MAX_PARSER_CACHE_SIZE) {
+      const firstKey = parserCache.keys().next().value;
+      if (firstKey !== undefined) parserCache.delete(firstKey);
+    }
+    parserCache.set(cacheKey, result);
+  }
+
+  return result;
 }
 
 /**
@@ -630,6 +656,18 @@ export function generateGuestScaledCategories(
       'Late-night vendor overtime labor authorization'
     ]
   });
+
+  // Ensure exact sum matches totalBudgetAmount without integer rounding discrepancy
+  if (totalBudgetAmount) {
+    const allocatedSum = categories.reduce((sum, c) => sum + (c.allocatedAmount || 0), 0);
+    const diff = totalBudgetAmount - allocatedSum;
+    if (diff !== 0) {
+      const cateringCategory = categories.find((c) => c.id === 'catering');
+      if (cateringCategory && cateringCategory.allocatedAmount !== undefined) {
+        cateringCategory.allocatedAmount += diff;
+      }
+    }
+  }
 
   return categories;
 }
