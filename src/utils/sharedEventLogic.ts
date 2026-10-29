@@ -41,10 +41,15 @@ export function checkSecurityShield(instruction: string): { blocked: boolean; re
   const lower = (instruction || '').toLowerCase();
   if (
     lower.includes('ignore all previous instructions') ||
+    lower.includes('ignore previous instructions') ||
     lower.includes('tell me your system prompt') ||
     lower.includes('system override') ||
     lower.includes('reveal secret key') ||
-    lower.includes('bypass security')
+    lower.includes('bypass security') ||
+    lower.includes('developer mode') ||
+    lower.includes('सिस्टम ओवरराइड') ||
+    lower.includes('डेवलपर मोड') ||
+    lower.includes('नया नियम')
   ) {
     return {
       blocked: true,
