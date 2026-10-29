@@ -58,26 +58,27 @@ export function extractCompactEventData(text: string): CompactEventData {
     eventType = 'conference';
   }
 
-  // Event Name extraction
+  // FIX: ReDoS Prevention - linear regex without nested quantifiers or exponential backtracking
   let eventName = "Asha and Kiran's wedding";
-  const nameMatch = text.match(/([A-Z][a-z]+(?:\s+(?:and|&)\s+[A-Z][a-z]+)?(?:'s)?\s+(?:wedding|birthday|celebration|fest|summit))/i);
+  const nameMatch = text.match(/\b([A-Za-z]+(?:\s+(?:and|&)\s+[A-Za-z]+)?'s?\s+(?:wedding|birthday|celebration|fest|summit))\b/i);
   if (nameMatch) {
     eventName = nameMatch[0].trim();
   }
 
-  // Guest Count extraction
+  // FIX: ReDoS Prevention - atomic linear guest match
   let guestCount = eventType === 'wedding' ? 100 : eventType === 'birthday' ? 30 : 50;
-  const guestMatch = text.match(/(\d+)\s*(?:guests?|attendees?|people|pax|gust)/i);
+  const guestMatch = text.match(/\b(\d{1,5})\s*(?:guests?|attendees?|people|pax|gust)\b/i);
   if (guestMatch) {
     guestCount = parseInt(guestMatch[1], 10);
   }
 
-  // Total Budget extraction
+  // FIX: ReDoS Prevention - safe linear boundary-anchored budget extraction
   let totalBudget: number | null = null;
-  const lakhMatch = text.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:lakhs?|lac|l)\b/i);
-  const kMatch = text.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:k|thousand)\b/i);
-  const croreMatch = text.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:crores?|cr)\b/i);
-  const explicitNumberMatch = text.match(/(?:₹|rs\.?|inr|\$)\s*([\d,]+)|([\d,]{5,})\s*(?:budget|inr|rupees)?/i);
+  const lakhMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:lakhs?|lac|l)\b/i);
+  const kMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:k|thousand)\b/i);
+  const croreMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:crores?|cr)\b/i);
+  const currencySymbolMatch = text.match(/(?:₹|rs\.?|inr|\$)\s*(\d[\d,]*)/i);
+  const standaloneDigitsMatch = text.match(/\b(\d{5,})\b/);
 
   if (lakhMatch) {
     totalBudget = Math.round(parseFloat(lakhMatch[1].replace(/,/g, '')) * 100000);
@@ -85,8 +86,11 @@ export function extractCompactEventData(text: string): CompactEventData {
     totalBudget = Math.round(parseFloat(croreMatch[1].replace(/,/g, '')) * 10000000);
   } else if (kMatch) {
     totalBudget = Math.round(parseFloat(kMatch[1].replace(/,/g, '')) * 1000);
-  } else if (explicitNumberMatch) {
-    const rawDigits = (explicitNumberMatch[1] || explicitNumberMatch[2] || '').replace(/,/g, '');
+  } else if (currencySymbolMatch) {
+    const rawDigits = currencySymbolMatch[1].replace(/,/g, '');
+    if (rawDigits) totalBudget = parseInt(rawDigits, 10);
+  } else if (standaloneDigitsMatch) {
+    const rawDigits = standaloneDigitsMatch[1].replace(/,/g, '');
     if (rawDigits) totalBudget = parseInt(rawDigits, 10);
   }
 

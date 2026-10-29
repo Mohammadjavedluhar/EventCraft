@@ -50,9 +50,10 @@ export const BriefInput: React.FC<BriefInputProps> = ({
       </div>
 
       <div className="mt-4">
-        <label className="text-xs font-medium text-neutral-300 block mb-2">
+        {/* FIX: a11y replace non-form label with semantic text */}
+        <p className="text-xs font-medium text-neutral-300 block mb-2">
           Test with Real-World Briefs & Ambiguity Scenarios:
-        </label>
+        </p>
         <div className="flex flex-wrap gap-2">
           {SAMPLE_BRIEFS.map((sample, idx) => (
             <button
@@ -70,7 +71,12 @@ export const BriefInput: React.FC<BriefInputProps> = ({
 
       <form onSubmit={handleSubmit} className="mt-4 space-y-3">
         <div>
+          {/* FIX: a11y label association */}
+          <label htmlFor="event-brief-textarea" className="sr-only">
+            Event Request Brief
+          </label>
           <textarea
+            id="event-brief-textarea"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => {

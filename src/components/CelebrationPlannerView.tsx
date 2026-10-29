@@ -300,10 +300,12 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Event Name */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-event-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Event name
               </label>
               <input
+                id="celebration-event-name"
                 type="text"
                 value={eventName}
                 onChange={(e) => setEventName(e.target.value)}
@@ -315,11 +317,13 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Event Date */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-event-date" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Event date
               </label>
               <div className="relative">
                 <input
+                  id="celebration-event-date"
                   type="date"
                   value={eventDate}
                   onChange={(e) => setEventDate(e.target.value)}
@@ -331,10 +335,12 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Number of guests */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-guest-count" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Number of guests
               </label>
               <input
+                id="celebration-guest-count"
                 type="number"
                 min="5"
                 max="5000"
@@ -347,10 +353,12 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Total budget in rupees */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-total-budget" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Total budget in rupees
               </label>
               <input
+                id="celebration-total-budget"
                 type="number"
                 min="10000"
                 step="5000"
@@ -366,10 +374,12 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Style dropdown */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-style-select" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Style
               </label>
               <select
+                id="celebration-style-select"
                 value={style}
                 onChange={(e) => setStyle(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-[#111a2e] border border-slate-300 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
@@ -386,9 +396,9 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
             {/* Where should more money go? Choose up to 3 */}
             <div className="space-y-2 pt-1">
               <div>
-                <label className="block text-xs font-bold text-slate-900 dark:text-white">
+                <span className="block text-xs font-bold text-slate-900 dark:text-white">
                   Where should more money go?
-                </label>
+                </span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Choose up to 3. {selectedPriorities.length} chosen.
                 </p>
@@ -397,12 +407,15 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
               <div className="space-y-2 pt-1">
                 {priorityOptions.map((opt) => {
                   const isChecked = selectedPriorities.includes(opt.id);
+                  const inputId = `celebration-priority-${opt.id}`;
                   return (
                     <label
                       key={opt.id}
+                      htmlFor={inputId}
                       className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                       <input
+                        id={inputId}
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleTogglePriority(opt.id)}
@@ -418,10 +431,12 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
 
             {/* Special requests (optional) */}
             <div className="space-y-1.5 pt-1">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="celebration-special-requests" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Special requests (optional)
               </label>
               <textarea
+                id="celebration-special-requests"
                 rows={3}
                 value={specialRequests}
                 onChange={(e) => setSpecialRequests(e.target.value)}

@@ -221,9 +221,10 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     minGuests = Math.round(expectedGuests * 0.9);
     maxGuests = Math.round(expectedGuests * 1.1);
   } else {
-    const rangeMatch = text.match(/(\d+)\s*(?:-|to)\s*(\d+)\s*(?:guests?|attendees?|people|participants|pax)?/i);
-    const singleMatch = text.match(/(\d+)\s*(?:guests?|attendees?|people|participants|pax)/i);
-    const forMatch = text.match(/(?:for|about|approx|roughly|around)\s*(\d+)/i);
+    // FIX: ReDoS Prevention - linear regex without backtracking
+    const rangeMatch = text.match(/\b(\d+)\s*(?:-|to)\s*(\d+)\b/i);
+    const singleMatch = text.match(/\b(\d+)\s*(?:guests?|attendees?|people|participants|pax)\b/i);
+    const forMatch = text.match(/\b(?:for|about|approx|roughly|around)\s*(\d+)\b/i);
 
     if (rangeMatch) {
       minGuests = parseInt(rangeMatch[1], 10);
@@ -292,7 +293,8 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
   let targetSeasonOrDate = "December 2026 (Winter Season)";
   if (targetEventDate) {
     const d = new Date(targetEventDate);
-    if (!isNaN(d.getTime())) {
+    // FIX: Clean Code - use Number.isNaN instead of global isNaN
+    if (!Number.isNaN(d.getTime())) {
       targetSeasonOrDate = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric', day: 'numeric' });
     }
   }
@@ -312,10 +314,10 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
   if (totalBudgetAmount && totalBudgetAmount > 0) {
     totalBudgetProvided = true;
   } else {
-    // Regex parsing for budget (handles ₹5,00,000, 500000, $150k, 5L, 8Lakhs)
-    const inrLakhMatch = text.match(/(?:₹|rs\.?|inr)?\s*([\d,.]+)\s*(?:lakhs?|lac|l)/i);
-    const inrRupeeMatch = text.match(/₹\s*([\d,]+(?:\.\d+)?)/i);
-    const generalBudgetMatch = text.match(/\$\s*([\d,]+(?:\.\d+)?)\s*(k|thousand|m)?/i);
+    // FIX: ReDoS Prevention - linear regex without backtracking
+    const inrLakhMatch = text.match(/\b(\d+(?:\.\d+)?)\s*(?:lakhs?|lac|l)\b/i);
+    const inrRupeeMatch = text.match(/₹\s*(\d[\d,]*(?:\.\d+)?)/);
+    const generalBudgetMatch = text.match(/\$\s*(\d[\d,]*(?:\.\d+)?)\s*(k|thousand|m)?\b/i);
 
     if (inrLakhMatch) {
       totalBudgetAmount = parseFloat(inrLakhMatch[1].replace(/,/g, '')) * 100000;

@@ -143,10 +143,12 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
           {/* Row 1: Celebration Title & Event Category */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="md:col-span-2 space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="newplan-title" className="block text-xs font-semibold text-slate-300">
                 Celebration Title
               </label>
               <input
+                id="newplan-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -157,10 +159,12 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="newplan-category" className="block text-xs font-semibold text-slate-300">
                 Event Category
               </label>
               <select
+                id="newplan-category"
                 value={eventType}
                 onChange={(e) => setEventType(e.target.value as EventType)}
                 className="w-full bg-[#111a2e] border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors cursor-pointer"
@@ -180,11 +184,13 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
           {/* Row 2: City & Location & Target Event Date */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="space-y-2">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="newplan-location" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
                 <MapPin className="w-3.5 h-3.5 text-amber-400" />
                 <span>City & Location</span>
               </label>
               <input
+                id="newplan-location"
                 type="text"
                 value={cityAndLocation}
                 onChange={(e) => setCityAndLocation(e.target.value)}
@@ -195,11 +201,13 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+              {/* FIX: a11y label association */}
+              <label htmlFor="newplan-date" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
                 <Calendar className="w-3.5 h-3.5 text-amber-400" />
                 <span>Target Event Date</span>
               </label>
               <input
+                id="newplan-date"
                 type="date"
                 value={targetEventDate}
                 onChange={(e) => setTargetEventDate(e.target.value)}
@@ -215,7 +223,8 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
             {/* Guest Count (5 cols on lg) */}
             <div className="lg:col-span-4 space-y-2">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                {/* FIX: a11y label association */}
+                <label htmlFor="newplan-guest-count" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
                   <Users className="w-3.5 h-3.5 text-amber-400" />
                   <span>Guest Count</span>
                 </label>
@@ -224,6 +233,7 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
                 </span>
               </div>
               <input
+                id="newplan-guest-count"
                 type="number"
                 min="5"
                 max="5000"
@@ -241,7 +251,8 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
             {/* Total Budget (5 cols on lg) */}
             <div className="lg:col-span-4 space-y-2">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
+                {/* FIX: a11y label association */}
+                <label htmlFor="newplan-total-budget" className="flex items-center gap-1.5 text-xs font-semibold text-slate-300">
                   <IndianRupee className="w-3.5 h-3.5 text-amber-400" />
                   <span>Total Budget</span>
                 </label>
@@ -252,6 +263,7 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
 
               <div className="flex items-center gap-2">
                 <select
+                  aria-label="Currency"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
                   className="bg-[#111a2e] border border-slate-700/80 rounded-xl px-3 py-2.5 text-xs font-bold text-amber-300 focus:outline-none focus:border-amber-400 transition-colors shrink-0 cursor-pointer"
@@ -263,6 +275,7 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
                 </select>
 
                 <input
+                  id="newplan-total-budget"
                   type="number"
                   min="1000"
                   step="1000"
@@ -297,10 +310,12 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
 
           {/* Bespoke Vision / Creative Request */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-slate-300">
+            {/* FIX: a11y label association */}
+            <label htmlFor="newplan-bespoke-notes" className="block text-xs font-semibold text-slate-300">
               Creative Vision & Bespoke Directives
             </label>
             <textarea
+              id="newplan-bespoke-notes"
               rows={3}
               value={bespokeNotes}
               onChange={(e) => setBespokeNotes(e.target.value)}
