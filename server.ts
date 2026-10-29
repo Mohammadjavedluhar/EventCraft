@@ -13,6 +13,17 @@ const port = process.env.PORT || 3000;
 
 const app = express();
 
+// Disable framework version disclosure to comply with SonarCloud security rule S5689
+app.disable('x-powered-by');
+
+// Standard security headers
+app.use((_req, res, next) => {
+  res.removeHeader('X-Powered-By');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
