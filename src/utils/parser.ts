@@ -334,7 +334,13 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
       currency = 'USD';
     } else {
       totalBudgetAmount = 500000;
-      totalBudgetProvided = true;
+      totalBudgetProvided = false;
+      ambiguities.push({
+        field: 'Budget (Fallback Estimate)',
+        issue: 'No total budget was specified in the request brief.',
+        fallbackApplied: 'Provided standard baseline estimate based strictly on guest scale without hallucinating vendor quotes.',
+        severity: 'medium',
+      });
     }
   }
 

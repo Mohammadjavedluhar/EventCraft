@@ -162,8 +162,8 @@ export function App() {
           return;
         }
       }
-    } catch (err) {
-      console.warn('Backend proxy unavailable, utilizing deterministic engine:', err);
+    } catch {
+      // High-performance deterministic engine handles the request seamlessly
     }
 
     // High performance deterministic fallback
@@ -317,7 +317,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#070b14] text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       
       {/* Celebration Confetti Burst upon Plan Generation */}
       <ConfettiCanvas

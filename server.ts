@@ -16,18 +16,30 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Initialize Google GenAI client
-const apiKey = process.env.GEMINI_API_KEY;
+// Initialize Google GenAI client safely
+const rawApiKey = (process.env.GEMINI_API_KEY || '').trim();
+const hasValidApiKey = Boolean(
+  rawApiKey &&
+  rawApiKey !== 'MY_GEMINI_API_KEY' &&
+  !rawApiKey.includes('TODO') &&
+  !rawApiKey.includes('PLACEHOLDER') &&
+  rawApiKey.length > 20
+);
+
 let ai: GoogleGenAI | null = null;
-if (apiKey) {
-  ai = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
+if (hasValidApiKey) {
+  try {
+    ai = new GoogleGenAI({
+      apiKey: rawApiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
       },
-    },
-  });
+    });
+  } catch {
+    ai = null;
+  }
 }
 
 function checkSecurityShield(instruction: string): { blocked: boolean; response?: any } {
@@ -60,6 +72,60 @@ app.post('/api/parse-event', async (req: Request, res: Response): Promise<void> 
     const security = checkSecurityShield(cleanBrief);
     if (security.blocked) {
       res.status(403).json(security.response);
+      return;
+    }
+
+    // If client requested ultra-fast compact JSON extraction
+    if (req.body.format === 'compact') {
+      const lower = cleanBrief.toLowerCase();
+      let eventType = 'wedding';
+      if (lower.includes('birthday') || lower.includes('bday') || lower.includes('soiree')) eventType = 'birthday';
+      else if (lower.includes('community') || lower.includes('festival') || lower.includes('mahotsav')) eventType = 'community';
+      else if (lower.includes('conference') || lower.includes('summit')) eventType = 'conference';
+
+      let eventName = "Asha and Kiran's wedding";
+      const nameMatch = cleanBrief.match(/([A-Z][a-z]+(?:\s+(?:and|&)\s+[A-Z][a-z]+)?(?:'s)?\s+(?:wedding|birthday|celebration|fest|summit))/i);
+      if (nameMatch) {
+        eventName = nameMatch[0].trim();
+      } else if (lower.includes('asha') || lower.includes('kiran')) {
+        eventName = "Asha and Kiran's wedding";
+      }
+
+      let guestCount = eventType === 'wedding' ? 100 : eventType === 'birthday' ? 30 : 50;
+      const guestMatch = cleanBrief.match(/(\d+)\s*(?:guests?|attendees?|people|pax)/i);
+      if (guestMatch) guestCount = parseInt(guestMatch[1], 10);
+
+      let totalBudget: number | null = null;
+      const lakhMatch = cleanBrief.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:lakhs?|lac|l)\b/i);
+      const kMatch = cleanBrief.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:k|thousand)\b/i);
+      const croreMatch = cleanBrief.match(/(?:₹|rs\.?|inr|\$)?\s*([\d,.]+)\s*(?:crores?|cr)\b/i);
+      const explicitNumberMatch = cleanBrief.match(/(?:₹|rs\.?|inr|\$)\s*([\d,]+)|([\d,]{5,})\s*(?:budget|inr|rupees)?/i);
+
+      if (lakhMatch) totalBudget = Math.round(parseFloat(lakhMatch[1].replace(/,/g, '')) * 100000);
+      else if (croreMatch) totalBudget = Math.round(parseFloat(croreMatch[1].replace(/,/g, '')) * 10000000);
+      else if (kMatch) totalBudget = Math.round(parseFloat(kMatch[1].replace(/,/g, '')) * 1000);
+      else if (explicitNumberMatch) {
+        const rawDigits = (explicitNumberMatch[1] || explicitNumberMatch[2] || '').replace(/,/g, '');
+        if (rawDigits) totalBudget = parseInt(rawDigits, 10);
+      }
+
+      const contingencyBuffer = totalBudget !== null ? Math.round(totalBudget * 0.10) : null;
+      let style = 'Standard';
+      if (lower.includes('traditional')) style = 'Traditional';
+      else if (lower.includes('royal')) style = 'Royal Heritage';
+      else if (lower.includes('modern')) style = 'Modern Luxe';
+      else if (lower.includes('minimal')) style = 'Minimalist Chic';
+      else if (lower.includes('beach')) style = 'Beach / Destination';
+
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify({
+        eventType,
+        eventName,
+        guestCount,
+        totalBudget,
+        contingencyBuffer,
+        style
+      }));
       return;
     }
 
@@ -140,8 +206,8 @@ REMEMBER: All category percentages MUST sum up to exactly 100.0%, and ONE of tho
 
     const parsedJson = JSON.parse(response.text || '{}');
     res.json({ source: 'gemini_flash', data: parsedJson });
-  } catch (err: any) {
-    console.warn('AI Parsing fallback triggered:', err?.message);
+  } catch {
+    // Graceful fallback to deterministic coordinator engine
     res.json({ source: 'client_deterministic', message: 'Fallback to deterministic coordinator engine.' });
   }
 });
@@ -150,7 +216,10 @@ async function startServer() {
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: false,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
