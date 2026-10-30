@@ -103,11 +103,11 @@ export function extractCompactEventData(text: string): CompactEventData {
     eventName = nameMatch[0].trim();
   }
 
-  // Linear guest count extraction
+  // FIX S7773: Use ES6 Number.parseInt
   let guestCount = eventType === 'wedding' ? 100 : eventType === 'birthday' ? 30 : 50;
   const guestMatch = normalizedText.match(GUEST_COUNT_REGEX);
   if (guestMatch) {
-    guestCount = parseInt(guestMatch[1], 10);
+    guestCount = Number.parseInt(guestMatch[1], 10);
   }
 
   // Safe linear boundary-anchored budget extraction
@@ -118,18 +118,19 @@ export function extractCompactEventData(text: string): CompactEventData {
   const currencySymbolMatch = normalizedText.match(CURRENCY_SYMBOL_REGEX);
   const standaloneDigitsMatch = normalizedText.match(STANDALONE_DIGITS_REGEX);
 
+  // FIX S7773: Use ES6 Number.parseFloat and Number.parseInt
   if (lakhMatch) {
-    totalBudget = Math.round(parseFloat(lakhMatch[1].replace(/,/g, '')) * 100000);
+    totalBudget = Math.round(Number.parseFloat(lakhMatch[1].replace(/,/g, '')) * 100000);
   } else if (croreMatch) {
-    totalBudget = Math.round(parseFloat(croreMatch[1].replace(/,/g, '')) * 10000000);
+    totalBudget = Math.round(Number.parseFloat(croreMatch[1].replace(/,/g, '')) * 10000000);
   } else if (thousandMatch) {
-    totalBudget = Math.round(parseFloat(thousandMatch[1].replace(/,/g, '')) * 1000);
+    totalBudget = Math.round(Number.parseFloat(thousandMatch[1].replace(/,/g, '')) * 1000);
   } else if (currencySymbolMatch) {
     const rawDigits = currencySymbolMatch[1].replace(/,/g, '');
-    if (rawDigits) totalBudget = parseInt(rawDigits, 10);
+    if (rawDigits) totalBudget = Number.parseInt(rawDigits, 10);
   } else if (standaloneDigitsMatch) {
     const rawDigits = standaloneDigitsMatch[1].replace(/,/g, '');
-    if (rawDigits) totalBudget = parseInt(rawDigits, 10);
+    if (rawDigits) totalBudget = Number.parseInt(rawDigits, 10);
   }
 
   // Strict 10% contingency buffer

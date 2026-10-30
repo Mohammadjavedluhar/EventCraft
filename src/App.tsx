@@ -228,10 +228,10 @@ export function App() {
       // Deterministic adjustment
     }
 
-    // Deterministic adjustment for quick guest count modifications
-    const countMatch = instruction.match(/(\d+)\s*(?:guests|attendees|people)/i);
+    // FIX S8786 & S7773: Deterministic adjustment for quick guest count modifications
+    const countMatch = instruction.match(/(\d+)\s+(?:guests|attendees|people)/i);
     if (countMatch) {
-      const newCount = parseInt(countMatch[1], 10);
+      const newCount = Number.parseInt(countMatch[1], 10);
       const newCapacity = computeGuestCapacityMetrics(currentPlan.eventType, newCount);
       const newCategories = generateGuestScaledCategories(
         currentPlan.eventType,

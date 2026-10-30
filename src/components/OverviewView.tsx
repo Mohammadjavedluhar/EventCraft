@@ -181,7 +181,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                 max="1500"
                 step="5"
                 value={eventData.guestCount.expected}
-                onChange={(e) => onGuestCountChange(parseInt(e.target.value, 10))}
+                onChange={(e) => onGuestCountChange(Number.parseInt(e.target.value, 10))}
                 className="w-24 sm:w-28 accent-amber-400 cursor-pointer"
               />
               <div className="flex items-center gap-1">
@@ -191,7 +191,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   max="2500"
                   value={eventData.guestCount.expected}
                   onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
+                    const val = Number.parseInt(e.target.value, 10);
                     if (!Number.isNaN(val) && val > 0) onGuestCountChange(val);
                   }}
                   className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"

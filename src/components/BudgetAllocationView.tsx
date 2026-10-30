@@ -46,12 +46,12 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
     categories.reduce((acc, cat) => acc + cat.percentage, 0) * 10
   ) / 10;
 
-  const currentTotalAmount = totalBudgetInput ? parseFloat(totalBudgetInput) : null;
+  const currentTotalAmount = totalBudgetInput ? Number.parseFloat(totalBudgetInput) : null;
   const contingencyAbsorbed = capacityMetrics?.contingencyAbsorbedGuests || Math.max(3, Math.round(expectedGuests * 0.12));
 
   const handleApplyTotalBudget = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseFloat(totalBudgetInput);
+    const parsed = Number.parseFloat(totalBudgetInput);
     if (!Number.isNaN(parsed) && parsed > 0) {
       const updatedCategories = categories.map((cat) => ({
         ...cat,
@@ -227,7 +227,7 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
                     max="2500"
                     value={expectedGuests}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
+                      const val = Number.parseInt(e.target.value, 10);
                       if (!Number.isNaN(val) && val > 0) onGuestCountChange(val);
                     }}
                     className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"
@@ -530,7 +530,7 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
                             step="0.5"
                             value={cat.percentage}
                             onChange={(e) =>
-                              handlePercentageChange(cat.id, parseFloat(e.target.value))
+                              handlePercentageChange(cat.id, Number.parseFloat(e.target.value))
                             }
                             className="w-32 accent-amber-400"
                           />

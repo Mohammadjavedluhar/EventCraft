@@ -27,7 +27,7 @@ export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
       )
       .join('\n\n');
 
-    navigator.clipboard.writeText(`=== MASTER EVENT RUN OF SHOW ===\n\n${text}`);
+    void navigator.clipboard.writeText(`=== MASTER EVENT RUN OF SHOW ===\n\n${text}`);
     setCopiedSchedule(true);
     setTimeout(() => setCopiedSchedule(false), 2000);
   };

@@ -10,7 +10,7 @@ export const CreativeDirectionView: React.FC<CreativeDirectionViewProps> = ({ cr
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
 
   const handleCopyHex = (hex: string) => {
-    navigator.clipboard.writeText(hex);
+    void navigator.clipboard.writeText(hex);
     setCopiedHex(hex);
     setTimeout(() => setCopiedHex(null), 2000);
   };

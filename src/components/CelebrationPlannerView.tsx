@@ -357,7 +357,7 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
                 min="5"
                 max="5000"
                 value={numberOfGuests}
-                onChange={(e) => setNumberOfGuests(parseInt(e.target.value, 10) || 10)}
+                onChange={(e) => setNumberOfGuests(Number.parseInt(e.target.value, 10) || 10)}
                 required
                 className="w-full bg-slate-50 dark:bg-[#111a2e] border border-slate-300 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 tabular-nums"
               />
@@ -375,7 +375,7 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
                 min="10000"
                 step="5000"
                 value={totalBudget}
-                onChange={(e) => setTotalBudget(parseInt(e.target.value, 10) || 50000)}
+                onChange={(e) => setTotalBudget(Number.parseInt(e.target.value, 10) || 50000)}
                 required
                 className="w-full bg-slate-50 dark:bg-[#111a2e] border border-slate-300 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 tabular-nums"
               />

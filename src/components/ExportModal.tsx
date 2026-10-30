@@ -75,7 +75,7 @@ ${eventData.ambiguitiesAndFallbacks.length === 0
   const currentText = activeFormat === 'json' ? jsonContent : markdownContent;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(currentText);
+    void navigator.clipboard.writeText(currentText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

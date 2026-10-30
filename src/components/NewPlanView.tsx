@@ -239,7 +239,7 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
                 max="5000"
                 step="5"
                 value={guestCount}
-                onChange={(e) => setGuestCount(parseInt(e.target.value, 10) || 50)}
+                onChange={(e) => setGuestCount(Number.parseInt(e.target.value, 10) || 50)}
                 required
                 className="w-full bg-[#111a2e] border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors tabular-nums"
               />
@@ -280,7 +280,7 @@ export const NewPlanView: React.FC<NewPlanViewProps> = ({
                   min="1000"
                   step="1000"
                   value={totalBudget}
-                  onChange={(e) => setTotalBudget(parseInt(e.target.value, 10) || 10000)}
+                  onChange={(e) => setTotalBudget(Number.parseInt(e.target.value, 10) || 10000)}
                   required
                   className="flex-1 bg-[#111a2e] border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-400 transition-colors tabular-nums"
                 />

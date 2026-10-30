@@ -127,4 +127,5 @@ async function startServer() {
   });
 }
 
-startServer();
+// FIX S9383: Mark floating promise as explicitly discarded
+void startServer();

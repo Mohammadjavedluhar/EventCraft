@@ -243,8 +243,8 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     const forMatch = text.match(FOR_GUEST_REGEX);
 
     if (rangeMatch) {
-      minGuests = parseInt(rangeMatch[1].replace(/,/g, ''), 10);
-      maxGuests = parseInt(rangeMatch[2].replace(/,/g, ''), 10);
+      minGuests = Number.parseInt(rangeMatch[1].replace(/,/g, ''), 10);
+      maxGuests = Number.parseInt(rangeMatch[2].replace(/,/g, ''), 10);
       if (minGuests > maxGuests) {
         const tmp = minGuests;
         minGuests = maxGuests;
@@ -253,11 +253,11 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
       expectedGuests = Math.round((minGuests + maxGuests) / 2);
       isEstimated = true;
     } else if (singleMatch) {
-      expectedGuests = parseInt(singleMatch[1].replace(/,/g, ''), 10);
+      expectedGuests = Number.parseInt(singleMatch[1].replace(/,/g, ''), 10);
       minGuests = Math.round(expectedGuests * 0.9);
       maxGuests = Math.round(expectedGuests * 1.1);
     } else if (forMatch) {
-      expectedGuests = parseInt(forMatch[1].replace(/,/g, ''), 10);
+      expectedGuests = Number.parseInt(forMatch[1].replace(/,/g, ''), 10);
       minGuests = Math.round(expectedGuests * 0.9);
       maxGuests = Math.round(expectedGuests * 1.1);
     } else {
@@ -336,15 +336,15 @@ export function parseEventRequestDeterministic(rawInput: string, options?: Parse
     const generalBudgetMatch = text.match(GENERAL_BUDGET_REGEX);
 
     if (inrLakhMatch) {
-      totalBudgetAmount = parseFloat(inrLakhMatch[1].replace(/,/g, '')) * 100000;
+      totalBudgetAmount = Number.parseFloat(inrLakhMatch[1].replace(/,/g, '')) * 100000;
       totalBudgetProvided = true;
       currency = 'INR';
     } else if (inrRupeeMatch) {
-      totalBudgetAmount = parseFloat(inrRupeeMatch[1].replace(/,/g, ''));
+      totalBudgetAmount = Number.parseFloat(inrRupeeMatch[1].replace(/,/g, ''));
       totalBudgetProvided = true;
       currency = 'INR';
     } else if (generalBudgetMatch) {
-      let num = parseFloat(generalBudgetMatch[1].replace(/,/g, ''));
+      let num = Number.parseFloat(generalBudgetMatch[1].replace(/,/g, ''));
       if (generalBudgetMatch[2]?.toLowerCase() === 'k') num *= 1000;
       if (generalBudgetMatch[2]?.toLowerCase() === 'm') num *= 1000000;
       totalBudgetAmount = num;

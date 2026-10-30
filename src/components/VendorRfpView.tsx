@@ -28,7 +28,7 @@ ${item.keyVendorQuestions.map((q) => `• ${q}`).join('\n')}
 
 Coordinator Policy: Bids are evaluated against percentage allocations and compliance. All specific line-item pricing must be transparently provided in vendor submission.`;
 
-    navigator.clipboard.writeText(text);
+    void navigator.clipboard.writeText(text);
     setCopiedId(item.id);
     setTimeout(() => setCopiedId(null), 2000);
   };
@@ -45,7 +45,7 @@ ${item.keyVendorQuestions.map((q) => `  - ${q}`).join('\n')}`
       )
       .join('\n\n');
 
-    navigator.clipboard.writeText(`EVENT RFP DOSSIER: ${eventTitle}\n\n${fullText}`);
+    void navigator.clipboard.writeText(`EVENT RFP DOSSIER: ${eventTitle}\n\n${fullText}`);
     setCopiedId('all');
     setTimeout(() => setCopiedId(null), 2000);
   };
