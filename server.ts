@@ -120,8 +120,10 @@ async function startServer() {
     });
   }
 
-  app.listen(port, () => {
-    console.log(`EventCraft server running on port ${port}`);
+  const host = '0.0.0.0';
+  const numericPort = Number(process.env.PORT) || 3000;
+  app.listen(numericPort, host, () => {
+    console.log(`EventCraft server running on http://${host}:${numericPort}`);
   });
 }
 
