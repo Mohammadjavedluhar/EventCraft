@@ -121,7 +121,8 @@ async function startServer() {
   }
 
   const host = '0.0.0.0';
-  const numericPort = Number(process.env.PORT) || 3000;
+  // Use port 3000 for local/container dev server (port 8080 is reserved by internal nginx proxy)
+  const numericPort = isProduction ? (Number(process.env.PORT) || 3000) : 3000;
   app.listen(numericPort, host, () => {
     console.log(`EventCraft server running on http://${host}:${numericPort}`);
   });
