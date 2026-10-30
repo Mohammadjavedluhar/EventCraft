@@ -30,8 +30,16 @@ describe('Integration: End-to-End Event Planning Pipeline & API Handler', () => 
   });
 
   it('serves compact JSON format via /api/parse-event handler with status 200', async () => {
+    interface MockApiResponse {
+      eventType?: string;
+      guestCount?: number;
+      totalBudget?: number | null;
+      contingencyBuffer?: number | null;
+      style?: string;
+      error?: string;
+    }
     let statusCode = 0;
-    let responseData: any = null;
+    let responseData: MockApiResponse = {};
     const headers: Record<string, string> = {};
 
     const mockReq = {
@@ -50,8 +58,8 @@ describe('Integration: End-to-End Event Planning Pipeline & API Handler', () => 
         statusCode = code;
         return this;
       },
-      json(data: any) {
-        responseData = data;
+      json(data: unknown) {
+        responseData = data as MockApiResponse;
       },
       end() {},
     };
@@ -69,7 +77,7 @@ describe('Integration: End-to-End Event Planning Pipeline & API Handler', () => 
 
   it('returns 400 Bad Request if brief text is missing in API request', async () => {
     let statusCode = 0;
-    let responseData: any = null;
+    let responseData: { error?: string } = {};
 
     const mockReq = {
       method: 'POST',
@@ -82,8 +90,8 @@ describe('Integration: End-to-End Event Planning Pipeline & API Handler', () => 
         statusCode = code;
         return this;
       },
-      json(data: any) {
-        responseData = data;
+      json(data: unknown) {
+        responseData = data as { error?: string };
       },
       end() {},
     };
@@ -91,7 +99,7 @@ describe('Integration: End-to-End Event Planning Pipeline & API Handler', () => 
     await handler(mockReq, mockRes);
 
     expect(statusCode).toBe(400);
-    expect(responseData?.error).toBeDefined();
+    expect(responseData.error).toBeDefined();
   });
 
   it('returns 405 Method Not Allowed for non-POST and non-OPTIONS methods', async () => {

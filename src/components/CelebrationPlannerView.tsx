@@ -18,8 +18,20 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../utils/currency';
 
+export interface CelebrationPlanSummary {
+  eventName: string;
+  eventType: 'wedding' | 'birthday' | 'community';
+  eventDate: string;
+  numberOfGuests: number;
+  totalBudget: number;
+  style: string;
+  selectedPriorities: string[];
+  specialRequests: string;
+  budgetRows: BudgetSplitRow[];
+}
+
 interface CelebrationPlannerProps {
-  onPlanBuilt?: (summary: any) => void;
+  onPlanBuilt?: (summary: CelebrationPlanSummary) => void;
   onOpenMasterplan?: () => void;
 }
 

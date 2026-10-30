@@ -192,7 +192,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({
                   value={eventData.guestCount.expected}
                   onChange={(e) => {
                     const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val) && val > 0) onGuestCountChange(val);
+                    if (!Number.isNaN(val) && val > 0) onGuestCountChange(val);
                   }}
                   className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"
                 />

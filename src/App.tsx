@@ -338,7 +338,7 @@ export function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main id="main-content" className="flex-1">
         {activeView === 'planner' && (
           <CelebrationPlannerView
             onPlanBuilt={(summary) => {
@@ -347,7 +347,7 @@ export function App() {
                 `${summary.specialRequests || ''} ${summary.style} ${summary.eventType} celebration for ${summary.numberOfGuests} guests on ${summary.eventDate} with ₹${summary.totalBudget} budget. Priorities: ${summary.selectedPriorities.join(', ')}`,
                 {
                   title: summary.eventName,
-                  eventType: summary.eventType,
+                  eventType: summary.eventType === 'birthday' ? 'private_celebration' : summary.eventType === 'community' ? 'festival' : 'wedding',
                   cityAndLocation: 'Udaipur, Rajasthan',
                   targetEventDate: summary.eventDate,
                   guestCount: summary.numberOfGuests,

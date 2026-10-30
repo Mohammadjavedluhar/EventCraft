@@ -15,7 +15,7 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
 };
 
 export function formatCurrency(amount: number | null | undefined, currency: CurrencyCode = 'INR'): string {
-  if (amount === null || amount === undefined || isNaN(amount)) return '—';
+  if (amount === null || amount === undefined || Number.isNaN(amount)) return '—';
   
   const config = CURRENCIES[currency] || CURRENCIES.INR;
   try {

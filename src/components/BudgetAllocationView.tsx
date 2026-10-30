@@ -52,7 +52,7 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
   const handleApplyTotalBudget = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = parseFloat(totalBudgetInput);
-    if (!isNaN(parsed) && parsed > 0) {
+    if (!Number.isNaN(parsed) && parsed > 0) {
       const updatedCategories = categories.map((cat) => ({
         ...cat,
         allocatedAmount: Math.round(parsed * (cat.percentage / 100)),
@@ -228,7 +228,7 @@ export const BudgetAllocationView: React.FC<BudgetAllocationViewProps> = ({
                     value={expectedGuests}
                     onChange={(e) => {
                       const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val > 0) onGuestCountChange(val);
+                      if (!Number.isNaN(val) && val > 0) onGuestCountChange(val);
                     }}
                     className="w-14 bg-neutral-900 border border-neutral-700 rounded px-1.5 py-0.5 text-xs font-mono font-bold text-amber-400 text-right focus:outline-none focus:border-amber-400"
                   />

@@ -4,6 +4,7 @@ import {
   parseEventRequestDeterministic, 
   computeGuestCapacityMetrics 
 } from '../utils/parser';
+import { EventType } from '../types/event';
 
 describe('Deterministic Budget Calculation & 10% Contingency Guarantee', () => {
   it('strictly locks a 10.0% contingency buffer into all event budgets', () => {
@@ -17,7 +18,7 @@ describe('Deterministic Budget Calculation & 10% Contingency Guarantee', () => {
   });
 
   it('ensures all budget category percentages sum to exactly 100.0%', () => {
-    const testCases: Array<{ type: any; guests: number; budget: number }> = [
+    const testCases: Array<{ type: EventType; guests: number; budget: number }> = [
       { type: 'wedding', guests: 250, budget: 1500000 },
       { type: 'private_celebration', guests: 30, budget: 75000 },
       { type: 'conference', guests: 1200, budget: 800000 },
