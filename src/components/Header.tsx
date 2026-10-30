@@ -29,9 +29,10 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Left: EventGenie Brand */}
-        <div 
+        <button
+          type="button"
           onClick={() => setActiveView('planner')}
-          className="flex items-center gap-2 sm:gap-3 shrink-0 cursor-pointer group"
+          className="flex items-center gap-2 sm:gap-3 shrink-0 cursor-pointer group text-left focus:outline-hidden focus:ring-2 focus:ring-amber-400 rounded-xl"
         >
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-500/20 via-amber-600/10 to-amber-700/5 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-sm shadow-amber-500/10 group-hover:border-amber-400 transition-colors">
             <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
@@ -49,7 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
               Celebration Planner
             </span>
           </div>
-        </div>
+        </button>
 
         {/* Center: Main View Navigation (Responsive & Scroll-Safe) */}
         <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1">

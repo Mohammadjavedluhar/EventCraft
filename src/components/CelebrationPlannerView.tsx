@@ -711,21 +711,25 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
                 {allTimelineSteps.map((step) => {
                   const isChecked = !!completedSteps[step.id];
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={step.id}
                       onClick={() => toggleStep(step.id)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 ${
+                      className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 ${
                         isChecked
                           ? 'bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-slate-850 opacity-60'
                           : 'bg-white dark:bg-[#111a2e] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                       }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {}} // Handled by parent div
-                        className="mt-0.5 w-4 h-4 rounded text-indigo-600 border-slate-300 dark:border-slate-600 focus:ring-indigo-500 cursor-pointer"
-                      />
+                      <span
+                        className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          isChecked
+                            ? 'bg-indigo-600 border-indigo-600 text-white'
+                            : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+                        }`}
+                      >
+                        {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                      </span>
 
                       <div className="flex-1 min-w-0">
                         <span
@@ -741,7 +745,7 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
                           {step.date} · {step.timing} · {step.category}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>

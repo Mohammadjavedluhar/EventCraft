@@ -166,7 +166,9 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({
                 key={i}
                 type="button"
                 disabled={isLoading}
-                onClick={() => handleSubmit(qp)}
+                onClick={() => {
+                  void handleSubmit(qp);
+                }}
                 className="text-[11px] px-2.5 py-1 rounded-lg bg-[#14203b] hover:bg-[#1a294c] border border-slate-700/60 text-slate-300 hover:text-white transition-colors text-left cursor-pointer disabled:opacity-50 focus:outline-hidden focus:ring-1 focus:ring-amber-400"
               >
                 {qp}
@@ -179,7 +181,8 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSubmit(prompt);
+            // FIX S9383: Explicitly mark intentionally unawaited promise with void operator
+            void handleSubmit(prompt);
           }}
           className="p-3 border-t border-slate-800 bg-[#0e162a] flex items-center gap-2"
         >
