@@ -421,10 +421,11 @@ export const CurrentPlanView: React.FC<CurrentPlanViewProps> = ({
                   {(eventData.logistics?.keyMilestones || []).slice(0, 4).map((milestone) => {
                     const isDone = !!completedMilestones[milestone.id];
                     return (
-                      <div
+                      <button
+                        type="button"
                         key={milestone.id}
                         onClick={() => handleToggleMilestone(milestone.id)}
-                        className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                        className={`w-full p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left ${
                           isDone
                             ? 'bg-slate-900/40 border-slate-850 opacity-60'
                             : 'bg-[#111a2e]/80 border-slate-800 hover:border-slate-700'
@@ -474,7 +475,7 @@ export const CurrentPlanView: React.FC<CurrentPlanViewProps> = ({
                             {milestone.criticality}
                           </span>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>

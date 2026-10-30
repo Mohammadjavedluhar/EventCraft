@@ -67,10 +67,11 @@ export const FullChecklistModal: React.FC<FullChecklistModalProps> = ({
           {milestones.map((milestone) => {
             const isDone = !!completedMap[milestone.id];
             return (
-              <div
+              <button
+                type="button"
                 key={milestone.id}
                 onClick={() => toggleCheck(milestone.id)}
-                className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                className={`w-full p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 text-left ${
                   isDone
                     ? 'bg-slate-900/40 border-slate-850 opacity-60'
                     : 'bg-[#111a2e]/90 border-slate-800 hover:border-slate-700'
@@ -119,7 +120,7 @@ export const FullChecklistModal: React.FC<FullChecklistModalProps> = ({
                     {milestone.criticality}
                   </span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

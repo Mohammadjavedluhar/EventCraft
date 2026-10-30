@@ -282,10 +282,10 @@ export const CelebrationPlannerView: React.FC<CelebrationPlannerProps> = ({
             
             {/* Type of event: Segmented pills */}
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span id="label-celebration-event-type" className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Type of event
-              </label>
-              <div className="grid grid-cols-3 gap-2">
+              </span>
+              <div role="group" aria-labelledby="label-celebration-event-type" className="grid grid-cols-3 gap-2">
                 {[
                   { id: 'wedding', label: 'Wedding' },
                   { id: 'birthday', label: 'Birthday' },

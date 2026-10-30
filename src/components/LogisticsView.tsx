@@ -147,22 +147,23 @@ export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
             {logistics.keyMilestones.map((m, idx) => {
               const isChecked = !!completedMilestones[idx];
               return (
-                <div
+                <button
+                  type="button"
                   key={idx}
                   onClick={() => toggleMilestone(idx)}
-                  className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-3 ${
+                  className={`w-full text-left p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-3 ${
                     isChecked
                       ? 'bg-emerald-950/20 border-emerald-900/40 text-neutral-400'
                       : 'bg-neutral-950/60 border-neutral-800 hover:border-neutral-700 text-neutral-200'
                   }`}
                 >
-                  <button type="button" className="mt-0.5 text-neutral-400 focus:outline-none">
+                  <span className="mt-0.5 text-neutral-400">
                     {isChecked ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400" />
                     ) : (
                       <Square className="w-4 h-4 text-neutral-500" />
                     )}
-                  </button>
+                  </span>
 
                   <div className="flex-1 space-y-0.5">
                     <div className="flex items-center justify-between gap-2 text-xs">
@@ -183,7 +184,7 @@ export const LogisticsView: React.FC<LogisticsViewProps> = ({ logistics }) => {
                       {m.task}
                     </p>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
